@@ -14,8 +14,10 @@
 
 (defn lookup [ctx keys]
   (if (seq keys)
-    (let [[k & ks] keys]
-      (when-let [x (first (filter #(and (map? %) (contains? % k)) ctx))]
+    (let [k (first keys)]
+      (when-let [x (->> ctx
+                        (filter #(and (map? %) (contains? % k)))
+                        first)]
         (get-in x keys)))
     (first ctx)))
 
