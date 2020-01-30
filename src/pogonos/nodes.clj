@@ -2,10 +2,10 @@
 
 (defrecord Variable [keys unescaped?])
 
-(defrecord Section [keys children])
+(defrecord Section [keys nodes])
 
 (defrecord SectionEnd [keys])
 
-(defrecord Inverted [keys children])
+(defrecord Inverted [keys nodes])
 
 (defrecord Partial [name indent])

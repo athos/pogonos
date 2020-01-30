@@ -39,16 +39,16 @@
       (cond (not val) nil
 
             (map? val)
-            (doseq [node (:children this)]
+            (doseq [node (:nodes this)]
               (proto/render node (cons val ctx) out))
 
             (and (coll? val) (sequential? val))
             (when (seq val)
-              (doseq [e val, node (:children this)]
+              (doseq [e val, node (:nodes this)]
                 (proto/render node (cons e ctx) out)))
 
             :else
-            (doseq [node (:children this)]
+            (doseq [node (:nodes this)]
               (proto/render node ctx out)))))
 
   Inverted
@@ -56,5 +56,5 @@
     (let [val (lookup ctx (:keys this))]
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
-        (doseq [node (:children this)]
+        (doseq [node (:nodes this)]
           (proto/render node ctx out))))))
