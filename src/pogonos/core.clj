@@ -71,14 +71,15 @@
 
 (declare process*)
 
-(defn process-open-section [pre post in out]
+(defn process-open-section [pre post inverted? in out]
   (let [[name post'] (split (subs post 1) *close-delim*)
         keys (process-keys (trim name))
         children (volatile! [])
         out' (fn [x]
                (if (= (:type x) :section-end)
                  (if (= keys (:keys x))
-                   (out {:type :section :keys keys :children @children})
+                   (out {:type (if inverted? :inverted :section)
+                         :keys keys :children @children})
                    (assert false (str "Unexpected tag " (:keys x) " occurred")))
                  (vswap! children conj x)))]
     (when-not (and (str/blank? pre) (str/blank? post'))
@@ -128,7 +129,8 @@
       (do (process-close-section pre post in out)
           true)
       (do (case c
-            \# (process-open-section pre post in out)
+            \# (process-open-section pre post false in out)
+            \^ (process-open-section pre post true in out)
             \& (process-variable pre post true in out)
             \> (process-partial pre post in out)
             \! (process-comment pre post in out)
@@ -195,6 +197,13 @@
           :else
           (doseq [node (:children x)]
             (render* stack out node)))))
+
+(defmethod render* :inverted [stack out x]
+  (let [ctx (lookup stack (:keys x))]
+    (when (or (not ctx)
+              (and (coll? ctx) (sequential? ctx) (empty? ctx)))
+      (doseq [node (:children x)]
+        (render* stack out node)))))
 
 (defn render-string [s data]
   (let [in (make-string-reader s)
