@@ -11,29 +11,29 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defn- process-keys [s]
+(defn- parse-keys [s]
   (->> (str/split s #"\.")
        (mapv keyword)))
 
-(defn- process-variable [pre post unescaped? in out]
+(defn- parse-variable [pre post unescaped? in out]
   (out pre)
   (if-let [[name post'] (pstr/split post *close-delim*)]
-    (do (out (nodes/->Variable (process-keys (pstr/trim name)) unescaped?))
+    (do (out (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
         (proto/unread in post'))
     (assert false "broken variable tag")))
 
-(defn- process-unescaped-variable [pre post in out]
+(defn- parse-unescaped-variable [pre post in out]
   (out pre)
   (if-let [[name post'] (pstr/split (subs post 1) "}}}")]
-    (do (out (nodes/->Variable (process-keys (pstr/trim name)) true))
+    (do (out (nodes/->Variable (parse-keys (pstr/trim name)) true))
         (proto/unread in post'))
     (assert false "broken variable tag")))
 
-(declare process*)
+(declare parse*)
 
-(defn- process-open-section [pre post inverted? in out]
+(defn- parse-open-section [pre post inverted? in out]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)
-        keys (process-keys (pstr/trim name))
+        keys (parse-keys (pstr/trim name))
         children (volatile! [])
         out' (fn [x]
                (if (instance? SectionEnd x)
@@ -45,16 +45,16 @@
     (when-not (and (str/blank? pre) (str/blank? post'))
       (out pre)
       (proto/unread in post'))
-    (process* in out')))
+    (parse* in out')))
 
-(defn- process-close-section [pre post in out]
+(defn- parse-close-section [pre post in out]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
     (when-not (and (str/blank? pre) (str/blank? post'))
       (out pre)
       (proto/unread in post'))
-    (out (nodes/->SectionEnd (process-keys (pstr/trim name))))))
+    (out (nodes/->SectionEnd (parse-keys (pstr/trim name))))))
 
-(defn- process-partial [pre post in out]
+(defn- parse-partial [pre post in out]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
     (out (nodes/->Partial (pstr/trim name) pre))
     (proto/unread in post')))
@@ -83,35 +83,35 @@
       (out pre)
       (proto/unread in post'))))
 
-(defn- process-tag [pre post in out]
+(defn- parse-tag [pre post in out]
   (if-let [c (pstr/char-at post 0)]
     (if (= c \/)
-      (do (process-close-section pre post in out)
+      (do (parse-close-section pre post in out)
           true)
       (do (case c
-            \# (process-open-section pre post false in out)
-            \^ (process-open-section pre post true in out)
-            \& (process-variable pre post true in out)
-            \> (process-partial pre post in out)
+            \# (parse-open-section pre post false in out)
+            \^ (parse-open-section pre post true in out)
+            \& (parse-variable pre post true in out)
+            \> (parse-partial pre post in out)
             \! (process-comment pre post in out)
             \{ (if (= *open-delim* default-open-delim)
-                 (process-unescaped-variable pre post in out)
+                 (parse-unescaped-variable pre post in out)
                  (assert false (str "Unexpected { after changed open delim: " *open-delim*)))
             \= (process-set-delimiter pre post in out)
-            (process-variable pre post false in out))
+            (parse-variable pre post false in out))
           false))
     (assert false "Unexpected end of line")))
 
-(defn process* [in out]
+(defn parse* [in out]
   (loop []
     (when-let [line (proto/read in)]
       (if-let [[pre post] (pstr/split line *open-delim*)]
-        (or (process-tag pre post in out)
+        (or (parse-tag pre post in out)
             (recur))
         (do (out line)
             (recur))))))
 
-(defn process [in out]
+(defn parse [in out]
   (binding [*open-delim* default-open-delim
             *close-delim* default-close-delim]
-    (process* in out)))
+    (parse* in out)))

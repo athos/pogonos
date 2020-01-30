@@ -8,5 +8,5 @@
         sb (StringBuilder.)
         out #(.append sb %)
         ctx [data]]
-    (parser/process in #(proto/render % ctx out))
+    (parser/parse in #(proto/render % ctx out))
     (str sb)))

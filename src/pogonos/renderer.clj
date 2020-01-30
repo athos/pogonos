@@ -29,8 +29,8 @@
     (let [val (lookup ctx (:keys this))
           escape-fn (if (:unescaped? this) identity escape)]
       (if (fn? val)
-        (parser/process* (reader/make-string-reader (str (val)))
-                         #(proto/render % ctx (comp out escape-fn)))
+        (parser/parse* (reader/make-string-reader (str (val)))
+                       #(proto/render % ctx (comp out escape-fn)))
         (out (escape-fn (str val))))))
 
   Section
