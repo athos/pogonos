@@ -2,7 +2,6 @@
   (:require [clojure.string :as str]
             [pogonos.nodes :as nodes]
             [pogonos.protocols :as proto]
-            [pogonos.reader :as reader]
             [pogonos.strings :as pstr])
   (:import [pogonos.nodes SectionEnd]))
 
