@@ -1,4 +1,4 @@
-(ns pogonos.reader
+(ns pogonos.read
   (:require [clojure.string :as str]
             [pogonos.protocols :as proto]))
 

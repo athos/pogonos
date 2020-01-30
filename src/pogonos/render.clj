@@ -1,9 +1,9 @@
-(ns pogonos.renderer
+(ns pogonos.render
   (:require [clojure.string :as str]
             [pogonos.nodes]
-            [pogonos.parser :as parser]
+            [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
-            [pogonos.reader :as reader])
+            [pogonos.read :as read])
   (:import [pogonos.nodes Inverted Section Variable]))
 
 (defn escape [s]
@@ -31,8 +31,8 @@
     (let [val (lookup ctx (:keys this))
           escape-fn (if (:unescaped? this) identity escape)]
       (if (fn? val)
-        (parser/parse* (reader/make-string-reader (str (val)))
-                       #(proto/render % ctx (comp out escape-fn)))
+        (parse/parse* (read/make-string-reader (str (val)))
+                      #(proto/render % ctx (comp out escape-fn)))
         (out (escape-fn (str val))))))
 
   Section

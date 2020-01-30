@@ -1,4 +1,4 @@
-(ns pogonos.parser
+(ns pogonos.parse
   (:require [clojure.string :as str]
             [pogonos.nodes :as nodes]
             [pogonos.protocols :as proto]
