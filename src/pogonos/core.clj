@@ -1,12 +1,12 @@
 (ns pogonos.core
   (:require [pogonos.parser :as parser]
-            [pogonos.reader :as reader]
-            [pogonos.renderer :as renderer]))
+            [pogonos.protocols :as proto]
+            [pogonos.reader :as reader]))
 
 (defn render-string [s data]
   (let [in (reader/make-string-reader s)
         sb (StringBuilder.)
         out #(.append sb %)
-        stack [data]]
-    (parser/process in (fn [x] (renderer/render* stack out x)))
+        ctx [data]]
+    (parser/process in #(proto/render % ctx out))
     (str sb)))

@@ -1,8 +1,10 @@
 (ns pogonos.parser
   (:require [clojure.string :as str]
+            [pogonos.nodes :as nodes]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader]
-            [pogonos.strings :as pstr]))
+            [pogonos.strings :as pstr])
+  (:import [pogonos.nodes SectionEnd]))
 
 (def ^:const default-open-delim "{{")
 (def ^:const default-close-delim "}}")
@@ -16,16 +18,14 @@
 (defn- process-variable [pre post unescaped? in out]
   (out pre)
   (if-let [[name post'] (pstr/split post *close-delim*)]
-    (do (out {:type :variable :keys (process-keys (pstr/trim name))
-              :unescaped? unescaped?})
+    (do (out (nodes/->Variable (process-keys (pstr/trim name)) unescaped?))
         (proto/unread in post'))
     (assert false "broken variable tag")))
 
 (defn- process-unescaped-variable [pre post in out]
   (out pre)
   (if-let [[name post'] (pstr/split post "}}}")]
-    (do (out {:type :variable :keys (process-keys (pstr/trim name))
-              :unescaped? true})
+    (do (out (nodes/->Variable (process-keys (pstr/trim name) true)))
         (proto/unread in post'))
     (assert false "broken variable tag")))
 
@@ -36,10 +36,10 @@
         keys (process-keys (pstr/trim name))
         children (volatile! [])
         out' (fn [x]
-               (if (= (:type x) :section-end)
+               (if (instance? SectionEnd x)
                  (if (= keys (:keys x))
-                   (out {:type (if inverted? :inverted :section)
-                         :keys keys :children @children})
+                   (out ((if inverted? nodes/->Inverted nodes/->Section)
+                         keys @children))
                    (assert false (str "Unexpected tag " (:keys x) " occurred")))
                  (vswap! children conj x)))]
     (when-not (and (str/blank? pre) (str/blank? post'))
@@ -52,11 +52,11 @@
     (when-not (and (str/blank? pre) (str/blank? post'))
       (out pre)
       (proto/unread in post'))
-    (out {:type :section-end :keys (process-keys (pstr/trim name))})))
+    (out (nodes/->SectionEnd (process-keys (pstr/trim name))))))
 
 (defn- process-partial [pre post in out]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
-    (out {:type :partial :name (pstr/trim name) :indent pre})
+    (out (nodes/->Partial (pstr/trim name) pre))
     (proto/unread in post')))
 
 (defn- process-comment [pre post in out]

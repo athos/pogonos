@@ -1,7 +1,10 @@
 (ns pogonos.renderer
   (:require [clojure.string :as str]
+            [pogonos.nodes]
             [pogonos.parser :as parser]
-            [pogonos.reader :as reader]))
+            [pogonos.protocols :as proto]
+            [pogonos.reader :as reader])
+  (:import [pogonos.nodes Inverted Section Variable]))
 
 (defn escape [s]
   (str/replace s #"[&<>\"']"
@@ -9,46 +12,50 @@
                   "\"" "&quot;", "'" "&#39;"}
                  (str %))))
 
-(defmulti render* (fn [stack out x] (:type x)))
-(defmethod render* :default [stack out x]
-  (out (str x)))
-
-(defn lookup [stack keys]
+(defn lookup [ctx keys]
   (if (seq keys)
     (let [[k & ks] keys]
-      (when-let [x (first (filter #(and (map? %) (contains? % k)) stack))]
+      (when-let [x (first (filter #(and (map? %) (contains? % k)) ctx))]
         (get-in x keys)))
-    (first stack)))
+    (first ctx)))
 
-(defmethod render* :variable [stack out x]
-  (let [ctx (lookup stack (:keys x))]
-    (if (fn? ctx)
-      (parser/process* (reader/make-string-reader (str (ctx)))
-                       #(render* stack out %))
-      (->> (str ctx)
-           ((if (:unescaped? x) identity escape))
-           out))))
+(extend-protocol proto/IRenderable
+  Object
+  (render [this ctx out]
+    (out (str this)))
 
-(defmethod render* :section [stack out x]
-  (let [ctx (lookup stack (:keys x))]
-    (cond (not ctx) nil
+  Variable
+  (render [this ctx out]
+    (let [val (lookup ctx (:keys this))]
+      (if (fn? val)
+        (parser/process* (reader/make-string-reader (str (val)))
+                         #(proto/render % ctx out))
+        (->> (str val)
+             ((if (:unescaped? this) identity escape))
+             out))))
 
-          (map? ctx)
-          (doseq [node (:children x)]
-            (render* (cons ctx stack) out node))
+  Section
+  (render [this ctx out]
+    (let [val (lookup ctx (:keys this))]
+      (cond (not val) nil
 
-          (and (coll? ctx) (sequential? ctx))
-          (when (seq ctx)
-            (doseq [e ctx, node (:children x)]
-              (render* (cons e stack) out node)))
+            (map? val)
+            (doseq [node (:children this)]
+              (proto/render node (cons val ctx) out))
 
-          :else
-          (doseq [node (:children x)]
-            (render* stack out node)))))
+            (and (coll? val) (sequential? val))
+            (when (seq val)
+              (doseq [e val, node (:children this)]
+                (proto/render node (cons e ctx) out)))
 
-(defmethod render* :inverted [stack out x]
-  (let [ctx (lookup stack (:keys x))]
-    (when (or (not ctx)
-              (and (coll? ctx) (sequential? ctx) (empty? ctx)))
-      (doseq [node (:children x)]
-        (render* stack out node)))))
+            :else
+            (doseq [node (:children this)]
+              (proto/render node ctx out)))))
+
+  Inverted
+  (render [this ctx out]
+    (let [val (lookup ctx (:keys this))]
+      (when (or (not val)
+                (and (coll? val) (sequential? val) (empty? val)))
+        (doseq [node (:children this)]
+          (proto/render node ctx out))))))

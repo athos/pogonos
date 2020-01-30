@@ -5,3 +5,6 @@
   (read [this])
   (unread [this s])
   (end? [this]))
+
+(defprotocol IRenderable
+  (render [this ctx out]))
