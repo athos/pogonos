@@ -24,8 +24,8 @@
 
 (defn- process-unescaped-variable [pre post in out]
   (out pre)
-  (if-let [[name post'] (pstr/split post "}}}")]
-    (do (out (nodes/->Variable (process-keys (pstr/trim name) true)))
+  (if-let [[name post'] (pstr/split (subs post 1) "}}}")]
+    (do (out (nodes/->Variable (process-keys (pstr/trim name)) true))
         (proto/unread in post'))
     (assert false "broken variable tag")))
 

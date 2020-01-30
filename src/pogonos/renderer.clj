@@ -8,7 +8,7 @@
 
 (defn escape [s]
   (str/replace s #"[&<>\"']"
-               #({"&" "&amp;", "<" "&lt;", ">" "g"
+               #({"&" "&amp;", "<" "&lt;", ">" "&gt;"
                   "\"" "&quot;", "'" "&#39;"}
                  (str %))))
 
@@ -26,13 +26,12 @@
 
   Variable
   (render [this ctx out]
-    (let [val (lookup ctx (:keys this))]
+    (let [val (lookup ctx (:keys this))
+          escape-fn (if (:unescaped? this) identity escape)]
       (if (fn? val)
         (parser/process* (reader/make-string-reader (str (val)))
-                         #(proto/render % ctx out))
-        (->> (str val)
-             ((if (:unescaped? this) identity escape))
-             out))))
+                         #(proto/render % ctx (comp out escape-fn)))
+        (out (escape-fn (str val))))))
 
   Section
   (render [this ctx out]
