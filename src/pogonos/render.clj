@@ -21,6 +21,9 @@
         (get-in x keys)))
     (first ctx)))
 
+(defn render [ctx out x]
+  (proto/render x ctx out))
+
 (extend-protocol proto/IRenderable
   Object
   (render [this ctx out]
@@ -32,7 +35,7 @@
           escape-fn (if (:unescaped? this) identity escape)]
       (if (fn? val)
         (parse/parse* (read/make-string-reader (str (val)))
-                      #(proto/render % ctx (comp out escape-fn)))
+                      #(render ctx (comp out escape-fn) %))
         (out (escape-fn (str val))))))
 
   Section
@@ -42,16 +45,16 @@
 
             (map? val)
             (doseq [node (:nodes this)]
-              (proto/render node (cons val ctx) out))
+              (render (cons val ctx) out node))
 
             (and (coll? val) (sequential? val))
             (when (seq val)
               (doseq [e val, node (:nodes this)]
-                (proto/render node (cons e ctx) out)))
+                (render (cons e ctx) out node)))
 
             :else
             (doseq [node (:nodes this)]
-              (proto/render node ctx out)))))
+              (render ctx out node)))))
 
   Inverted
   (render [this ctx out]
@@ -59,4 +62,4 @@
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
         (doseq [node (:nodes this)]
-          (proto/render node ctx out))))))
+          (render ctx out node))))))
