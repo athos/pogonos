@@ -26,8 +26,11 @@
 
 (extend-protocol proto/IRenderable
   Object
+  (render [this ctx out])
+
+  String
   (render [this ctx out]
-    (out (str this)))
+    (out this))
 
   Variable
   (render [this ctx out]
