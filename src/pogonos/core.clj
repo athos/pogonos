@@ -26,3 +26,11 @@
         ctx [data]]
     (parse/parse in #(render/render ctx out %))
     (str sb)))
+
+(defn render-file [file data]
+  (with-open [in (read/make-file-reader file)]
+    (let [sb (StringBuilder.)
+          out #(.append sb %)
+          ctx [data]]
+      (parse/parse in #(render/render ctx out %))
+      (str sb))))

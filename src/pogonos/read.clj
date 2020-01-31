@@ -1,6 +1,8 @@
 (ns pogonos.read
   (:require [clojure.string :as str]
-            [pogonos.protocols :as proto]))
+            [clojure.java.io :as io]
+            [pogonos.protocols :as proto])
+  (:import [java.io BufferedReader Closeable]))
 
 (deftype StringReader
     [^String src
@@ -24,3 +26,23 @@
 
 (defn make-string-reader [s]
   (StringReader. s 0 nil))
+
+(deftype FileReader
+    [^BufferedReader reader
+     ^:unsynchronized-mutable ^String pushback]
+  proto/IReader
+  (read [this]
+    (if-let [ret pushback]
+      (do (set! pushback nil)
+          ret)
+      (some-> (.readLine reader) (str \newline))))
+  (unread [this s]
+    (set! pushback s))
+  (end? [this]
+    (and (nil? pushback) (not (.ready reader))))
+  Closeable
+  (close [this]
+    (.close reader)))
+
+(defn make-file-reader [file]
+  (FileReader. (io/reader file) nil))
