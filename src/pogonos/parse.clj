@@ -1,7 +1,7 @@
 (ns pogonos.parse
   (:require [clojure.string :as str]
             [pogonos.nodes :as nodes]
-            [pogonos.protocols :as proto]
+            [pogonos.read :as read]
             [pogonos.strings :as pstr])
   (:import [pogonos.nodes SectionEnd]))
 
@@ -18,14 +18,14 @@
   (out pre)
   (if-let [[name post'] (pstr/split post *close-delim*)]
     (do (out (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
-        (proto/unread in post'))
+        (read/unread in post'))
     (assert false "broken variable tag")))
 
 (defn- parse-unescaped-variable [pre post in out]
   (out pre)
   (if-let [[name post'] (pstr/split (subs post 1) "}}}")]
     (do (out (nodes/->Variable (parse-keys (pstr/trim name)) true))
-        (proto/unread in post'))
+        (read/unread in post'))
     (assert false "broken variable tag")))
 
 (declare parse*)
@@ -48,7 +48,7 @@
                  (vswap! children conj x)))]
     (when-not standalone?
       (out pre)
-      (proto/unread in post'))
+      (read/unread in post'))
     (parse* in out')))
 
 (defn- parse-close-section [pre post in out]
@@ -56,7 +56,7 @@
         standalone? (and (str/blank? pre) (str/blank? post'))]
     (when-not standalone?
       (out pre)
-      (proto/unread in post'))
+      (read/unread in post'))
     (-> (nodes/->SectionEnd (parse-keys (pstr/trim name)))
         (cond->
           (and standalone? (or (seq pre) (seq post')))
@@ -67,14 +67,14 @@
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
     (out pre)
     (out (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))
-    (proto/unread in post')))
+    (read/unread in post')))
 
 (defn- parse-comment [pre post in out]
   (if-let [[comment post'] (pstr/split (subs post 1) *close-delim*)]
     (let [standalone? (and (str/blank? pre) (str/blank? post'))]
       (when-not standalone?
         (out pre)
-        (proto/unread in post'))
+        (read/unread in post'))
       (-> (nodes/->Comment [comment])
           (cond->
             (and standalone? (or (seq pre) (seq post')))
@@ -82,10 +82,10 @@
           out))
     (do (out pre)
         (loop [acc []]
-          (let [line (proto/read in)]
+          (let [line (read/read in)]
             (if-let [[comment post'] (pstr/split line *close-delim*)]
               (do (out (nodes/->Comment (conj acc comment)))
-                  (proto/unread in post'))
+                  (read/unread in post'))
               (recur (conj acc line))))))))
 
 (defn- parse-set-delimiter [pre post in out]
@@ -101,7 +101,7 @@
     (set! *close-delim* close)
     (when-not standalone?
       (out pre)
-      (proto/unread in post'))
+      (read/unread in post'))
     (-> (nodes/->SetDelimiter open close)
         (cond->
           (and standalone? (or (seq pre) (seq post')))
@@ -129,7 +129,7 @@
 
 (defn parse* [in out]
   (loop []
-    (when-let [line (proto/read in)]
+    (when-let [line (read/read in)]
       (if-let [[pre post] (pstr/split line *open-delim*)]
         (or (parse-tag pre post in out)
             (recur))

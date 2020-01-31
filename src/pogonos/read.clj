@@ -1,8 +1,12 @@
 (ns pogonos.read
+  (:refer-clojure :exclude [read])
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
             [pogonos.protocols :as proto])
   (:import [java.io BufferedReader Closeable]))
+
+(def ^{:arglists '([reader])} read proto/read)
+(def ^{:arglists '([reader s])} unread proto/unread)
 
 (deftype StringReader
     [^String src
