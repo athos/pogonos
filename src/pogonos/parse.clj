@@ -65,6 +65,7 @@
 
 (defn- parse-partial [pre post in out]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
+    (out pre)
     (out (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))
     (proto/unread in post')))
 
