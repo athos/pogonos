@@ -20,9 +20,7 @@
           (set! offset offset')
           ret))))
   (unread [this s]
-    (set! pushback s))
-  (end? [this]
-    (and (nil? pushback) (>= offset (count src)))))
+    (set! pushback s)))
 
 (defn make-string-reader [s]
   (StringReader. s 0 nil))
@@ -38,8 +36,6 @@
       (some-> (.readLine reader) (str \newline))))
   (unread [this s]
     (set! pushback s))
-  (end? [this]
-    (and (nil? pushback) (not (.ready reader))))
   Closeable
   (close [this]
     (.close reader)))

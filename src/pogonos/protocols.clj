@@ -3,8 +3,7 @@
 
 (defprotocol IReader
   (read [this])
-  (unread [this s])
-  (end? [this]))
+  (unread [this s]))
 
 (defprotocol IRenderable
   (render [this ctx out]))
