@@ -4,7 +4,7 @@
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
             [pogonos.read :as read])
-  (:import [pogonos.nodes Inverted Section Variable]))
+  (:import [pogonos.nodes Inverted Root Section Variable]))
 
 (defn escape [s]
   (str/replace s #"[&<>\"']"
@@ -31,6 +31,11 @@
   String
   (render [this ctx out]
     (out this))
+
+  Root
+  (render [this ctx out]
+    (doseq [node (:body this)]
+      (render ctx out node)))
 
   Variable
   (render [this ctx out]

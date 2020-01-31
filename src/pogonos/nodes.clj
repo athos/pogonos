@@ -2,6 +2,8 @@
 
 (defprotocol Invisible)
 
+(defrecord Root [body])
+
 (defrecord Variable [keys unescaped?])
 
 (defrecord Section [keys nodes])
