@@ -4,7 +4,7 @@
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
             [pogonos.read :as read])
-  (:import [pogonos.nodes Inverted Root Section Variable]))
+  (:import [pogonos.nodes Inverted Partial Root Section Variable]))
 
 (defn escape [s]
   (str/replace s #"[&<>\"']"
@@ -70,4 +70,13 @@
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
         (doseq [node (:nodes this)]
-          (render ctx out node))))))
+          (render ctx out node)))))
+
+  Partial
+  (render [this ctx out]
+    (parse/parse (read/make-file-reader (str (:name this) ".mustache"))
+                 (fn [node]
+                   (render ctx out node)
+                   ;; FIXME: Should interrupt during reading or parsing time
+                   (when (and (string? node) (str/ends-with? node "\n"))
+                     (render ctx out (:indent this)))))))
