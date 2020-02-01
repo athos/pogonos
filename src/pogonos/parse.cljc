@@ -3,7 +3,7 @@
             [pogonos.nodes :as nodes]
             [pogonos.read :as read]
             [pogonos.strings :as pstr])
-  (:import [pogonos.nodes SectionEnd]))
+  #?(:clj (:import [pogonos.nodes SectionEnd])))
 
 (def ^:const default-open-delim "{{")
 (def ^:const default-close-delim "}}")
@@ -36,7 +36,7 @@
         children (volatile! [])
         standalone? (and (str/blank? pre) (str/blank? post'))
         out' (fn [x]
-               (if (instance? SectionEnd x)
+               (if (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
                  (if (= keys (:keys x))
                    (-> ((if inverted? nodes/->Inverted nodes/->Section)
                         keys @children)

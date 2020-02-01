@@ -4,11 +4,12 @@
             [pogonos.nodes]
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
-            [pogonos.read :as read])
-  (:import [pogonos.nodes Inverted Partial Root Section Variable]))
+            [pogonos.read :as read]
+            [pogonos.nodes :as nodes])
+  #?(:clj (:import [pogonos.nodes Inverted Partial Root Section Variable])))
 
 (def ^:dynamic *partials-resolver*
-  (pres/file-partials-resolver))
+  #?(:clj (pres/file-partials-resolver)))
 
 (defn escape [s]
   (str/replace s #"[&<>\"']"
@@ -30,19 +31,19 @@
     (proto/render x ctx out)))
 
 (extend-protocol proto/IRenderable
-  Object
+  #?(:clj Object :cljs object)
   (render [this ctx out])
 
-  String
+  #?(:clj String :cljs string)
   (render [this ctx out]
     (out this))
 
-  Root
+  #?(:clj Root :cljs nodes/Root)
   (render [this ctx out]
     (doseq [node (:body this)]
       (proto/render node ctx out)))
 
-  Variable
+  #?(:clj Variable :cljs nodes/Variable)
   (render [this ctx out]
     (let [val (lookup ctx (:keys this))
           escape-fn (if (:unescaped? this) identity escape)]
@@ -51,7 +52,7 @@
                       #(proto/render % ctx (comp out escape-fn)))
         (out (escape-fn (str val))))))
 
-  Section
+  #?(:clj Section :cljs nodes/Section)
   (render [this ctx out]
     (let [val (lookup ctx (:keys this))]
       (cond (not val) nil
@@ -69,7 +70,7 @@
             (doseq [node (:nodes this)]
               (proto/render node ctx out)))))
 
-  Inverted
+  #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
     (let [val (lookup ctx (:keys this))]
       (when (or (not val)
@@ -77,7 +78,7 @@
         (doseq [node (:nodes this)]
           (proto/render node ctx out)))))
 
-  Partial
+  #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
     (if-let [r (pres/resolve *partials-resolver* (:name this))]
       (parse/parse r

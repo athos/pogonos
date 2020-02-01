@@ -2,10 +2,10 @@
   (:require [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.parse :as parse]
-            [pogonos.partials-resolver :as pres]
+            #?(:clj [pogonos.partials-resolver :as pres])
             [pogonos.read :as read]
             [pogonos.render :as render])
-  (:import [java.io Closeable]))
+  #?(:clj (:import [java.io Closeable])))
 
 (defn parse [s]
   (let [in (read/make-string-reader s)
@@ -40,12 +40,14 @@
   ([s data opts]
    (render-input (read/make-string-reader s) data opts)))
 
-(defn render-file
-  ([file data]
-   (render-file file data {}))
-  ([file data opts]
-   (with-open [in ^Closeable (read/make-file-reader file)]
-     (render-input in data opts))))
+#?(:clj
+   (defn render-file
+     ([file data]
+      (render-file file data {}))
+     ([file data opts]
+      (with-open [in ^Closeable (read/make-file-reader file)]
+        (render-input in data opts)))))
 
-(defn set-default-partials-base-path! [base-path]
-  (pres/set-default-partials-base-path! base-path))
+#?(:clj
+   (defn set-default-partials-base-path! [base-path]
+     (pres/set-default-partials-base-path! base-path)))
