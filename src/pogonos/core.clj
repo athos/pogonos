@@ -2,6 +2,7 @@
   (:require [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.parse :as parse]
+            [pogonos.partials-resolver :as pres]
             [pogonos.read :as read]
             [pogonos.render :as render])
   (:import [java.io Closeable]))
@@ -18,18 +19,19 @@
 (defn render
   ([template data]
    (render template data {}))
-  ([template data {:keys [output] :or {output (output/string-output)}}]
+  ([template data
+    {:keys [output] :or {output (output/string-output)} :as opts}]
    (let [out #(output/append output %)]
-     (render/render [data] out template)
+     (render/render [data] out template opts)
      (output/complete))))
 
 (defn render-input
   ([in data]
    (render-input in data {}))
-  ([in data {:keys [output] :or {output (output/string-output)}}]
+  ([in data {:keys [output] :or {output (output/string-output)} :as opts}]
    (let [out #(output/append output %)
          ctx [data]]
-     (parse/parse in #(render/render ctx out %))
+     (parse/parse in #(render/render ctx out % opts))
      (output/complete output))))
 
 (defn render-string
@@ -44,3 +46,6 @@
   ([file data opts]
    (with-open [in ^Closeable (read/make-file-reader file)]
      (render-input in data opts))))
+
+(defn set-default-partials-base-path! [base-path]
+  (pres/set-default-partials-base-path! base-path))

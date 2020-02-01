@@ -1,5 +1,5 @@
 (ns pogonos.protocols
-  (:refer-clojure :exclude [read]))
+  (:refer-clojure :exclude [read resolve]))
 
 (defprotocol IReader
   (read [this])
@@ -11,3 +11,6 @@
 
 (defprotocol IRenderable
   (render [this ctx out]))
+
+(defprotocol IPartialsResolver
+  (resolve [this name]))
