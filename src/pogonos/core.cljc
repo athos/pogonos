@@ -23,7 +23,7 @@
     {:keys [output] :or {output (output/string-output)} :as opts}]
    (let [out #(output/append output %)]
      (render/render [data] out template opts)
-     (output/complete))))
+     (output/complete output))))
 
 (defn render-input
   ([in data]
