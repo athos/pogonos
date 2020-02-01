@@ -1,8 +1,10 @@
 (ns pogonos.core
   (:require [pogonos.nodes :as nodes]
+            [pogonos.output :as output]
             [pogonos.parse :as parse]
             [pogonos.read :as read]
-            [pogonos.render :as render]))
+            [pogonos.render :as render])
+  (:import [java.io Closeable]))
 
 (defn parse [s]
   (let [in (read/make-string-reader s)
@@ -13,24 +15,32 @@
     (parse/parse in out)
     (nodes/->Root @buf)))
 
-(defn render [template data]
-  (let [sb (StringBuilder.)
-        out #(.append sb %)]
-    (render/render [data] out template)
-    (str sb)))
+(defn render
+  ([template data]
+   (render template data {}))
+  ([template data {:keys [output] :or {output (output/string-output)}}]
+   (let [out #(output/append output %)]
+     (render/render [data] out template)
+     (output/complete))))
 
-(defn render-string [s data]
-  (let [in (read/make-string-reader s)
-        sb (StringBuilder.)
-        out #(.append sb %)
-        ctx [data]]
-    (parse/parse in #(render/render ctx out %))
-    (str sb)))
+(defn render-input
+  ([in data]
+   (render-input in data {}))
+  ([in data {:keys [output] :or {output (output/string-output)}}]
+   (let [out #(output/append output %)
+         ctx [data]]
+     (parse/parse in #(render/render ctx out %))
+     (output/complete output))))
 
-(defn render-file [file data]
-  (with-open [in (read/make-file-reader file)]
-    (let [sb (StringBuilder.)
-          out #(.append sb %)
-          ctx [data]]
-      (parse/parse in #(render/render ctx out %))
-      (str sb))))
+(defn render-string
+  ([s data]
+   (render-string s data {}))
+  ([s data opts]
+   (render-input (read/make-string-reader s) data opts)))
+
+(defn render-file
+  ([file data]
+   (render-file file data {}))
+  ([file data opts]
+   (with-open [in ^Closeable (read/make-file-reader file)]
+     (render-input in data opts))))
