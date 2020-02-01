@@ -1,10 +1,36 @@
-# pogonos
+# Pogonos
 
-another Clojure implementation of Mustache template engine
+Pogonos is another Clojure implementation of Mustache template engine.
 
 ## Usage
 
-FIXME
+```clojure
+(require '[pogonos.core :as pg])
+
+(pg/render-string "Hello, {{name}}!" {:name "Rich"})
+;=> "Hello, Rich!"
+;; Loads a Mustache template from a file
+(pg/render-file "sample.mustache" {:name "Rich"})
+
+(def template (pg/parse "Hello, {{name}}!"))
+(pg/render template {:name "Rich"})
+;=> "Hello, Rich!"
+(pg/render template {:name "Alex"})
+;=> "Hello, Alex!"
+
+(require '[pogonos.output :as output])
+;; Prints the rendered result to stdout
+(pg/render-string "Hello, {{name}}" {:name "Rich"}
+                  {:output (output/standard-output)})
+
+;; Outputs the rendered result to a file
+(pg/render-string "Hello, {{name}}" {:name "Rich"}
+                  {:output (output/file-output "result.txt")})
+
+(pg/render-string "{{>node}}" {:content "X" :nodes [{:content "Y" :nodes []}]}
+                  {:partials {:node "{{content}}<{{#nodes}}{{>node}}{{/nodes}}>"}})
+;=> "X<Y<>>"
+```
 
 ## License
 
