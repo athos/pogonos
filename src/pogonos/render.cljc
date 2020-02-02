@@ -76,11 +76,11 @@
                 (proto/render node (cons e ctx) out)))
 
             (fn? val)
-            (let [body (val (stringify/stringify (:nodes this)))]
+            (let [{:keys [open close]} (meta this)
+                  body (val (stringify/stringify (:nodes this) open close))]
               (parse/parse (read/make-string-reader body)
                            #(proto/render % ctx out)
-                           {:open-delim (:open (meta this))
-                            :close-delim (:close (meta this))}))
+                           {:open-delim open :close-delim close}))
 
             :else
             (doseq [node (:nodes this)]

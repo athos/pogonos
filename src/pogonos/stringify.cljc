@@ -103,9 +103,9 @@
     (set! *open-delim* (:open this))
     (set! *close-delim* (:close this))))
 
-(defn stringify [node]
+(defn stringify [node open-delim close-delim]
   (let [output (output/string-output)]
-    (binding [*open-delim* "{{"
-              *close-delim* "}}"]
+    (binding [*open-delim* (or open-delim "{{")
+              *close-delim* (or close-delim "}}")]
       (proto/stringify node #(output/append output %))
       (output/complete output))))
