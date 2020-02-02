@@ -81,7 +81,7 @@
             (with-meta {:pre pre :post post'}))
           out))
     (do (out pre)
-        (loop [acc []]
+        (loop [acc [(subs post 1)]]
           (let [line (read/read in)]
             (if-let [[comment post'] (pstr/split line *close-delim*)]
               (do (out (nodes/->Comment (conj acc comment)))
