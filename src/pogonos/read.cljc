@@ -9,9 +9,9 @@
 (def ^{:arglists '([reader s])} unread proto/unread)
 
 (deftype StringReader
-    [^String src
+    [src
      ^:unsynchronized-mutable offset
-     ^:unsynchronized-mutable ^String pushback]
+     ^:unsynchronized-mutable pushback]
   proto/IReader
   (read [this]
     (if-let [ret pushback]

@@ -141,7 +141,8 @@
 (defn parse* [in out]
   (loop [first? true]
     (when-let [line (read/read in)]
-      (when (and *indent* (not first?)) (out *indent*))
+      (when (and *indent* (not first?))
+        (out *indent*))
       (if-let [[pre post] (pstr/split line *open-delim*)]
         (or (parse-tag pre post in out)
             (recur false))
