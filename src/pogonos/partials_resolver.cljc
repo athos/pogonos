@@ -41,12 +41,16 @@
      (resolve [this name]
        (resolve-from-base-path this name))))
 
-(extend-type #?(:clj clojure.lang.APersistentMap
-                ;; FIXME: CLJS does not have APersistentMap??
-                :cljs PersistentArrayMap)
-  proto/IPartialsResolver
+(extend-protocol proto/IPartialsResolver
+  #?(:clj clojure.lang.APersistentMap
+     ;; FIXME: CLJS does not have APersistentMap??
+     :cljs PersistentArrayMap)
   (resolve [this name]
-    (some-> (get this (keyword name)) read/make-string-reader)))
+    (some-> (get this (keyword name)) read/make-string-reader))
+
+  #?(:clj clojure.lang.Fn :cljs function)
+  (resolve [this name]
+    (some-> (this (keyword name)) read/make-string-reader)))
 
 (defrecord CompositePartialsResolver [resolvers]
   proto/IPartialsResolver
