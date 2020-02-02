@@ -43,7 +43,8 @@
         open *open-delim*
         close *close-delim*
         out' (fn [x]
-               (if (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
+               (vswap! children conj x)
+               (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
                  (if (= keys (:keys x))
                    (-> ((if inverted? nodes/->Inverted nodes/->Section)
                         keys @children)
@@ -55,8 +56,7 @@
                          (and standalone? (or (seq pre) (seq post')))
                          (vary-meta assoc :pre pre :post post'))
                        out)
-                   (assert false (str "Unexpected tag " (:keys x) " occurred")))
-                 (vswap! children conj x)))]
+                   (assert false (str "Unexpected tag " (:keys x) " occurred")))))]
     (when-not standalone?
       (out pre)
       (read/unread in post'))

@@ -77,7 +77,11 @@
 
             (fn? val)
             (let [{:keys [open close]} (meta this)
-                  body (val (stringify/stringify (:nodes this) open close))]
+                  ;; the last element of the section body must be SectionEnd,
+                  ;; which has to be omitted prior to stringification
+                  body (-> (pop (:nodes this))
+                           (stringify/stringify open close)
+                           val)]
               (parse/parse (read/make-string-reader body)
                            #(proto/render % ctx out)
                            {:open-delim open :close-delim close}))
