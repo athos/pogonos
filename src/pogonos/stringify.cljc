@@ -4,7 +4,8 @@
             [pogonos.output :as output])
   #?(:clj
      (:import [pogonos.nodes
-               Comment Inverted Partial Section SectionEnd SetDelimiter Variable])))
+               Comment Inverted Partial Section SectionEnd SetDelimiter
+               UnescapedVariable Variable])))
 
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
@@ -49,6 +50,12 @@
       (out "&"))
     (stringify-keys (:keys this) out)
     (out *close-delim*))
+
+  #?(:clj UnescapedVariable :cljs nodes/UnescapedVariable)
+  (stringify [this out]
+    (out "{{{")
+    (stringify-keys (:keys this) out)
+    (out "}}}"))
 
   #?(:clj Section :cljs nodes/Section)
   (stringify [this out]

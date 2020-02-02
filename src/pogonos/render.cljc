@@ -6,7 +6,9 @@
             [pogonos.protocols :as proto]
             [pogonos.read :as read]
             [pogonos.stringify :as stringify])
-  #?(:clj (:import [pogonos.nodes Inverted Partial Root Section Variable])))
+  #?(:clj
+     (:import [pogonos.nodes
+               Inverted Partial Root Section UnescapedVariable Variable])))
 
 (def ^:dynamic *partials-resolver*
   #?(:clj (pres/file-partials-resolver)))
@@ -25,6 +27,14 @@
                         first)]
         (get-in x keys)))
     (first ctx)))
+
+(defn- render-variable [ctx out var unescaped?]
+  (let [val (lookup ctx (:keys var))
+        escape-fn (if unescaped? identity escape)]
+    (if (fn? val)
+      (parse/parse (read/make-string-reader (str (val)))
+                   #(proto/render % ctx (comp out escape-fn)))
+      (out (escape-fn (str val))))))
 
 (defn render [ctx out x {:keys [partials]}]
   (binding [*partials-resolver* (or partials *partials-resolver*)]
@@ -45,12 +55,11 @@
 
   #?(:clj Variable :cljs nodes/Variable)
   (render [this ctx out]
-    (let [val (lookup ctx (:keys this))
-          escape-fn (if (:unescaped? this) identity escape)]
-      (if (fn? val)
-        (parse/parse (read/make-string-reader (str (val)))
-                     #(proto/render % ctx (comp out escape-fn)))
-        (out (escape-fn (str val))))))
+    (render-variable ctx out this (:unescaped? this)))
+
+  #?(:clj UnescapedVariable :cljs nodes/UnescapedVariable)
+  (render [this ctx out]
+    (render-variable ctx out this true))
 
   #?(:clj Section :cljs nodes/Section)
   (render [this ctx out]

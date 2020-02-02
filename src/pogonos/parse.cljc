@@ -24,7 +24,7 @@
 (defn- parse-unescaped-variable [pre post in out]
   (out pre)
   (if-let [[name post'] (pstr/split (subs post 1) "}}}")]
-    (do (out (nodes/->Variable (parse-keys (pstr/trim name)) true))
+    (do (out (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
         (read/unread in post'))
     (assert false "broken variable tag")))
 

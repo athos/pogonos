@@ -6,6 +6,8 @@
 
 (defrecord Variable [keys unescaped?])
 
+(defrecord UnescapedVariable [keys])
+
 (defrecord Section [keys nodes])
 
 (defrecord SectionEnd [keys])
