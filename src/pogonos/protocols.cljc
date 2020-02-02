@@ -12,5 +12,8 @@
 (defprotocol IRenderable
   (render [this ctx out]))
 
+(defprotocol IStringifiable
+  (stringify [this out]))
+
 (defprotocol IPartialsResolver
   (resolve [this name]))
