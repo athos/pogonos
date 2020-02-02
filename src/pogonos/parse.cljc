@@ -9,6 +9,7 @@
 (def ^:const default-close-delim "}}")
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
+(def ^:dynamic *indent*)
 
 (defn- parse-keys [s]
   (->> (str/split s #"\.")
@@ -138,15 +139,19 @@
     (assert false "Unexpected end of line")))
 
 (defn parse* [in out]
-  (loop []
+  (loop [first? true]
     (when-let [line (read/read in)]
+      (when (and *indent* (not first?)) (out *indent*))
       (if-let [[pre post] (pstr/split line *open-delim*)]
         (or (parse-tag pre post in out)
-            (recur))
+            (recur false))
         (do (out line)
-            (recur))))))
+            (recur false))))))
 
-(defn parse [in out]
-  (binding [*open-delim* default-open-delim
-            *close-delim* default-close-delim]
-    (parse* in out)))
+(defn parse
+  ([in out] (parse in out {}))
+  ([in out {:keys [open-delim close-delim indent]}]
+   (binding [*open-delim* (or open-delim default-open-delim)
+             *close-delim* (or close-delim default-close-delim)
+             *indent* indent]
+     (parse* in out))))

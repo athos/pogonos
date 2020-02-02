@@ -77,12 +77,10 @@
 
             (fn? val)
             (let [body (val (stringify/stringify (:nodes this)))]
-              (binding [parse/*open-delim* (or (:open (meta this))
-                                               parse/default-open-delim)
-                        parse/*close-delim* (or (:close (meta this))
-                                                parse/default-close-delim)]
-                (parse/parse* (read/make-string-reader body)
-                              #(proto/render % ctx out))))
+              (parse/parse (read/make-string-reader body)
+                           #(proto/render % ctx out)
+                           {:open-delim (:open (meta this))
+                            :close-delim (:close (meta this))}))
 
             :else
             (doseq [node (:nodes this)]
@@ -99,10 +97,5 @@
   #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
     (if-let [r (pres/resolve *partials-resolver* (:name this))]
-      (parse/parse r
-                   (fn [node]
-                     (proto/render node ctx out)
-                     ;; FIXME: Should interrupt during reading or parsing time
-                     (when (and (string? node) (str/ends-with? node "\n"))
-                       (proto/render (:indent this) ctx out))))
+      (parse/parse r #(proto/render % ctx out) {:indent (:indent this)})
       (assert false (str "Partial named \"" (:name this) "\" not found")))))
