@@ -12,7 +12,7 @@
 
 (defn- stringify-keys [keys out]
   (if (empty? keys)
-    "."
+    (out ".")
     (do (out (name (first keys)))
         (doseq [k (rest keys)]
           (out ".")
