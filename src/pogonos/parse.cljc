@@ -35,14 +35,24 @@
         keys (parse-keys (pstr/trim name))
         children (volatile! [])
         standalone? (and (str/blank? pre) (str/blank? post'))
+        ;; Delimiters may be changed before SectionEnd arrives.
+        ;; So we need to bind them lexically here to remember
+        ;; what delimiters were actually used for this section-start tag
+        ;; in case of lambdas applied to the section
+        open *open-delim*
+        close *close-delim*
         out' (fn [x]
                (if (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
                  (if (= keys (:keys x))
                    (-> ((if inverted? nodes/->Inverted nodes/->Section)
                         keys @children)
                        (cond->
+                         (or (not= open default-open-delim)
+                             (not= close default-close-delim))
+                         (vary-meta assoc :open open :close close))
+                       (cond->
                          (and standalone? (or (seq pre) (seq post')))
-                         (with-meta {:pre pre :post post'}))
+                         (vary-meta assoc :pre pre :post post'))
                        out)
                    (assert false (str "Unexpected tag " (:keys x) " occurred")))
                  (vswap! children conj x)))]

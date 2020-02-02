@@ -68,8 +68,12 @@
 
             (fn? val)
             (let [body (val (stringify/stringify (:nodes this)))]
-              (parse/parse* (read/make-string-reader body)
-                            #(proto/render % ctx out)))
+              (binding [parse/*open-delim* (or (:open (meta this))
+                                               parse/default-open-delim)
+                        parse/*close-delim* (or (:close (meta this))
+                                                parse/default-close-delim)]
+                (parse/parse* (read/make-string-reader body)
+                              #(proto/render % ctx out))))
 
             :else
             (doseq [node (:nodes this)]

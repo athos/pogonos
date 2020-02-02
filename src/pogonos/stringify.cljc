@@ -26,8 +26,10 @@
   (out *close-delim*)
   (when-let [post (:post (meta section))]
     (out post))
-  (doseq [node (:nodes section)]
-    (proto/stringify node out)))
+  (binding [*open-delim* (or (:open (meta section)) *open-delim*)
+            *close-delim* (or (:close (meta section)) *close-delim*)]
+    (doseq [node (:nodes section)]
+      (proto/stringify node out))))
 
 (extend-protocol proto/IStringifiable
   #?(:clj String :cljs string)
