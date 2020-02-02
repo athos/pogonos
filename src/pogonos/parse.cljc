@@ -116,7 +116,7 @@
       (do (case c
             \# (parse-open-section pre post false in out)
             \^ (parse-open-section pre post true in out)
-            \& (parse-variable pre post true in out)
+            \& (parse-variable pre (subs post 1) true in out)
             \> (parse-partial pre post in out)
             \! (parse-comment pre post in out)
             \{ (if (= *open-delim* default-open-delim)
