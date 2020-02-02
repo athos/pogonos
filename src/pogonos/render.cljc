@@ -48,8 +48,8 @@
     (let [val (lookup ctx (:keys this))
           escape-fn (if (:unescaped? this) identity escape)]
       (if (fn? val)
-        (parse/parse* (read/make-string-reader (str (val)))
-                      #(proto/render % ctx (comp out escape-fn)))
+        (parse/parse (read/make-string-reader (str (val)))
+                     #(proto/render % ctx (comp out escape-fn)))
         (out (escape-fn (str val))))))
 
   #?(:clj Section :cljs nodes/Section)
