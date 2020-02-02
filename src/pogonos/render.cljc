@@ -1,11 +1,11 @@
 (ns pogonos.render
   (:require [clojure.string :as str]
             [pogonos.partials-resolver :as pres]
-            [pogonos.nodes]
+            [pogonos.nodes :as nodes]
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
             [pogonos.read :as read]
-            [pogonos.nodes :as nodes])
+            [pogonos.stringify :as stringify])
   #?(:clj (:import [pogonos.nodes Inverted Partial Root Section Variable])))
 
 (def ^:dynamic *partials-resolver*
@@ -65,6 +65,11 @@
             (when (seq val)
               (doseq [e val, node (:nodes this)]
                 (proto/render node (cons e ctx) out)))
+
+            (fn? val)
+            (let [body (val (stringify/stringify (:nodes this)))]
+              (parse/parse* (read/make-string-reader body)
+                            #(proto/render % ctx out)))
 
             :else
             (doseq [node (:nodes this)]
