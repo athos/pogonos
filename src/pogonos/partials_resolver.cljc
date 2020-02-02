@@ -48,4 +48,12 @@
   (resolve [this name]
     (some-> (get this (keyword name)) read/make-string-reader)))
 
+(defrecord CompositePartialsResolver [resolvers]
+  proto/IPartialsResolver
+  (resolve [this name]
+    (some #(proto/resolve % name) resolvers)))
+
+(defn compose [& resolvers]
+  (->CompositePartialsResolver resolvers))
+
 (def ^{:arglists '([resolver name])} resolve proto/resolve)
