@@ -84,7 +84,7 @@
 
             :else
             (doseq [node (:nodes this)]
-              (proto/render node ctx out)))))
+              (proto/render node (cons val ctx) out)))))
 
   #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
