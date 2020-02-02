@@ -1,4 +1,5 @@
 (ns pogonos.parse
+  (:refer-clojure :exclude [read])
   (:require [clojure.string :as str]
             [pogonos.nodes :as nodes]
             [pogonos.read :as read]
@@ -11,31 +12,52 @@
 (def ^:dynamic *close-delim*)
 (def ^:dynamic *indent*)
 
+(defrecord Parser [in out first?])
+
+(defn- make-parser [in out]
+  (->Parser in out true))
+
+(defn- emit [parser x]
+  ((:out parser) x))
+
+(defn- read [parser]
+  (read/read (:in parser)))
+
+(defn- unread [parser x]
+  (read/unread (:in parser) x))
+
 (defn- parse-keys [s]
   (->> (str/split s #"\.")
        (mapv keyword)))
 
-(defn- parse-variable [pre post unescaped? in out]
-  (out pre)
+(defn- parse-variable [parser pre post unescaped?]
+  (emit parser pre)
   (if-let [[name post'] (pstr/split post *close-delim*)]
-    (do (out (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
-        (read/unread in post'))
+    (do (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
+        (unread parser post'))
     (assert false "broken variable tag")))
 
-(defn- parse-unescaped-variable [pre post in out]
-  (out pre)
+(defn- parse-unescaped-variable [parser pre post]
+  (emit parser pre)
   (if-let [[name post'] (pstr/split (subs post 1) "}}}")]
-    (do (out (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
-        (read/unread in post'))
+    (do (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
+        (unread parser post'))
     (assert false "broken variable tag")))
+
+(defn- standalone? [pre post]
+  (and (str/blank? pre) (str/blank? post)))
+
+(defn- process-surrounding-whitespaces [parser pre post]
+  (emit parser pre)
+  (unread parser post))
 
 (declare parse*)
 
-(defn- parse-open-section [pre post inverted? in out]
+(defn- parse-open-section [parser pre post inverted?]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)
         keys (parse-keys (pstr/trim name))
         children (volatile! [])
-        standalone? (and (str/blank? pre) (str/blank? post'))
+        standalone? (standalone? pre post')
         ;; Delimiters may be changed before SectionEnd arrives.
         ;; So we need to bind them lexically here to remember
         ;; what delimiters were actually used for this section-start tag
@@ -55,51 +77,47 @@
                        (cond->
                          (and standalone? (or (seq pre) (seq post')))
                          (vary-meta assoc :pre pre :post post'))
-                       out)
+                       ((:out parser)))
                    (assert false (str "Unexpected tag " (:keys x) " occurred")))))]
     (when-not standalone?
-      (out pre)
-      (read/unread in post'))
-    (parse* in out')))
+      (process-surrounding-whitespaces parser pre post'))
+    (parse* (assoc parser :out out'))))
 
-(defn- parse-close-section [pre post in out]
+(defn- parse-close-section [parser pre post]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)
-        standalone? (and (str/blank? pre) (str/blank? post'))]
+        standalone? (standalone? pre post')]
     (when-not standalone?
-      (out pre)
-      (read/unread in post'))
+      (process-surrounding-whitespaces parser pre post'))
     (-> (nodes/->SectionEnd (parse-keys (pstr/trim name)))
         (cond->
           (and standalone? (or (seq pre) (seq post')))
           (with-meta {:pre pre :post post'}))
-        out)))
+        ((:out parser)))))
 
-(defn- parse-partial [pre post in out]
+(defn- parse-partial [parser pre post]
   (let [[name post'] (pstr/split (subs post 1) *close-delim*)]
-    (out pre)
-    (out (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))
-    (read/unread in post')))
+    (process-surrounding-whitespaces parser pre post')
+    (emit parser (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))))
 
-(defn- parse-comment [pre post in out]
+(defn- parse-comment [parser pre post]
   (if-let [[comment post'] (pstr/split (subs post 1) *close-delim*)]
-    (let [standalone? (and (str/blank? pre) (str/blank? post'))]
+    (let [standalone? (standalone? pre post')]
       (when-not standalone?
-        (out pre)
-        (read/unread in post'))
+        (process-surrounding-whitespaces parser pre post'))
       (-> (nodes/->Comment [comment])
           (cond->
             (and standalone? (or (seq pre) (seq post')))
             (with-meta {:pre pre :post post'}))
-          out))
-    (do (out pre)
+          ((:out parser))))
+    (do (emit parser pre)
         (loop [acc [(subs post 1)]]
-          (let [line (read/read in)]
+          (let [line (read parser)]
             (if-let [[comment post'] (pstr/split line *close-delim*)]
-              (do (out (nodes/->Comment (conj acc comment)))
-                  (read/unread in post'))
+              (do (emit parser (nodes/->Comment (conj acc comment)))
+                  (unread parser post'))
               (recur (conj acc line))))))))
 
-(defn- parse-set-delimiter [pre post in out]
+(defn- parse-set-delimiter [parser pre post]
   (let [[delims post'] (pstr/split (subs post 1) *close-delim*)
         [open close] (-> delims
                          (subs 0 (dec (count delims)))
@@ -107,52 +125,52 @@
                          (pstr/split " "))
         open (pstr/trim open)
         close (pstr/trim close)
-        standalone? (and (str/blank? pre) (str/blank? post'))]
+        standalone? (standalone? pre post')]
     (set! *open-delim* open)
     (set! *close-delim* close)
     (when-not standalone?
-      (out pre)
-      (read/unread in post'))
+      (process-surrounding-whitespaces parser pre post'))
     (-> (nodes/->SetDelimiter open close)
         (cond->
           (and standalone? (or (seq pre) (seq post')))
           (with-meta {:pre pre :post post'}))
-        out)))
+        ((:out parser)))))
 
-(defn- parse-tag [pre post in out]
+(defn- parse-tag [parser pre post]
   (if-let [c (pstr/char-at post 0)]
     (if (= c \/)
-      (do (parse-close-section pre post in out)
+      (do (parse-close-section parser pre post)
           true)
       (do (case c
-            \# (parse-open-section pre post false in out)
-            \^ (parse-open-section pre post true in out)
-            \& (parse-variable pre (subs post 1) true in out)
-            \> (parse-partial pre post in out)
-            \! (parse-comment pre post in out)
+            \# (parse-open-section parser pre post false)
+            \^ (parse-open-section parser pre post true)
+            \& (parse-variable parser pre (subs post 1) true)
+            \> (parse-partial parser pre post)
+            \! (parse-comment parser pre post)
             \{ (if (= *open-delim* default-open-delim)
-                 (parse-unescaped-variable pre post in out)
+                 (parse-unescaped-variable parser pre post)
                  (assert false (str "Unexpected { after changed open delim: " *open-delim*)))
-            \= (parse-set-delimiter pre post in out)
-            (parse-variable pre post false in out))
+            \= (parse-set-delimiter parser pre post)
+            (parse-variable parser pre post false))
           false))
     (assert false "Unexpected end of line")))
 
-(defn parse* [in out]
-  (loop [first? true]
-    (when-let [line (read/read in)]
-      (when (and *indent* (not first?))
-        (out *indent*))
-      (if-let [[pre post] (pstr/split line *open-delim*)]
-        (or (parse-tag pre post in out)
-            (recur false))
-        (do (out line)
-            (recur false))))))
+(defn parse* [parser]
+  (loop [parser parser]
+    (when-let [line (read parser)]
+      (let [end? (if-let [[pre post] (pstr/split line *open-delim*)]
+                   (parse-tag parser pre post)
+                   (do (emit parser line)
+                       false))]
+        (when-not end?
+          (-> (if (:first? parser)
+                (assoc parser :first? false)
+                parser)
+              (recur)))))))
 
 (defn parse
   ([in out] (parse in out {}))
   ([in out {:keys [open-delim close-delim indent]}]
    (binding [*open-delim* (or open-delim default-open-delim)
-             *close-delim* (or close-delim default-close-delim)
-             *indent* indent]
-     (parse* in out))))
+             *close-delim* (or close-delim default-close-delim)]
+     (parse* (make-parser in out)))))
