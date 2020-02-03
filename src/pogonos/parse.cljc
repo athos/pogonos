@@ -11,10 +11,10 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defrecord Parser [in out first?])
+(defrecord Parser [in out depth first?])
 
 (defn make-parser [in out]
-  (->Parser (read/make-line-buffered-reader in) out true))
+  (->Parser (read/make-line-buffered-reader in) out 0 true))
 
 (defn- read-char [{:keys [in]}]
   (read/read-char in))
@@ -96,7 +96,10 @@
                             (vary-meta assoc :pre pre :post post))
                           ((:out parser)))
                       (assert false (str "Unexpected tag " (:keys x) " occurred")))))]
-         (parse* (assoc parser :out out')))))))
+          (-> parser
+              (assoc :out out')
+              (update :depth inc)
+              parse*))))))
 
 (defn- parse-close-section [parser pre]
   (let [name (read-until parser *close-delim*)]
@@ -167,11 +170,13 @@
 (defn- parse* [parser]
   (loop [parser parser]
     (let [continue? (if-let [pre (read-until parser *open-delim*)]
-                      (parse-tag parser pre)
-                      (when-let [line (read-line parser)]
-                        (emit-indent parser)
-                        (emit parser line)
-                        true))]
+                      (or (parse-tag parser pre) (zero? (:depth parser)))
+                      (if-let [line (read-line parser)]
+                        (do (emit-indent parser)
+                            (emit parser line)
+                            true)
+                        (when (pos? (:depth parser))
+                          (assert false "Missed section-end tag"))))]
       (when continue?
         (-> (if (:first? parser)
               (assoc parser :first? false)
