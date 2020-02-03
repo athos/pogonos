@@ -10,7 +10,6 @@
 (def ^:const default-close-delim "}}")
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
-(def ^:dynamic *indent*)
 
 (defrecord Parser [in out first?])
 
@@ -26,11 +25,16 @@
 (defn- unread [parser x]
   (read/unread (:in parser) x))
 
+(defn- emit-indent [{:keys [indent first?] :as parser}]
+  (when (and indent (not first?))
+    (emit parser indent)))
+
 (defn- parse-keys [s]
   (->> (str/split s #"\.")
        (mapv keyword)))
 
 (defn- parse-variable [parser pre post unescaped?]
+  (emit-indent parser)
   (emit parser pre)
   (if-let [[name post'] (pstr/split post *close-delim*)]
     (do (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
@@ -48,6 +52,7 @@
   (and (str/blank? pre) (str/blank? post)))
 
 (defn- process-surrounding-whitespaces [parser pre post]
+  (emit-indent parser)
   (emit parser pre)
   (unread parser post))
 
@@ -109,7 +114,8 @@
             (and standalone? (or (seq pre) (seq post')))
             (with-meta {:pre pre :post post'}))
           ((:out parser))))
-    (do (emit parser pre)
+    (do (emit-indent parser)
+        (emit parser pre)
         (loop [acc [(subs post 1)]]
           (let [line (read parser)]
             (if-let [[comment post'] (pstr/split line *close-delim*)]
@@ -155,12 +161,13 @@
           false))
     (assert false "Unexpected end of line")))
 
-(defn parse* [parser]
+(defn- parse* [parser]
   (loop [parser parser]
     (when-let [line (read parser)]
       (let [end? (if-let [[pre post] (pstr/split line *open-delim*)]
                    (parse-tag parser pre post)
-                   (do (emit parser line)
+                   (do (emit-indent parser)
+                       (emit parser line)
                        false))]
         (when-not end?
           (-> (if (:first? parser)
@@ -173,4 +180,5 @@
   ([in out {:keys [open-delim close-delim indent]}]
    (binding [*open-delim* (or open-delim default-open-delim)
              *close-delim* (or close-delim default-close-delim)]
-     (parse* (make-parser in out)))))
+     (parse* (cond-> (make-parser in out)
+               indent (assoc :indent indent))))))
