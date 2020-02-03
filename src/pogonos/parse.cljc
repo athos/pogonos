@@ -28,27 +28,36 @@
 (defn- read-until [{:keys [in]} s]
   (read/read-until in s))
 
+(defn- line-num [{:keys [in]}]
+  (cond-> (read/line-num in)
+    (>= (read/col-num in) (count (read/line in)))
+    inc))
+
+(defn- col-num [{:keys [in]}]
+  (let [col (read/col-num in)]
+    (if (>= col (count (read/line in)))
+      0
+      col)))
+
 (defn- emit [parser x]
   ((:out parser) x))
 
-(defn- emit-indent [{:keys [indent first?] :as parser}]
-  (when (and indent (not first?))
-    (emit parser indent)))
+(defn- emit-pre [{:keys [padding] :as parser} pre]
+  (some->> (not-empty padding) (emit parser))
+  (some->> (not-empty pre) (emit parser)))
 
 (defn- parse-keys [s]
   (->> (str/split s #"\.")
        (mapv keyword)))
 
 (defn- parse-variable [parser pre unescaped?]
-  (emit-indent parser)
-  (emit parser pre)
+  (emit-pre parser pre)
   (if-let [name (read-until parser *close-delim*)]
     (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
     (assert false "broken variable tag")))
 
 (defn- parse-unescaped-variable [parser pre]
-  (emit-indent parser)
-  (emit parser pre)
+  (emit-pre parser pre)
   (if-let [name (read-until parser "}}}")]
     (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
     (assert false "broken variable tag")))
@@ -62,8 +71,7 @@
 (defn- with-surrounding-whitespaces-processed [parser pre f]
   (let [standalone? (standalone? parser pre)]
     (when-not standalone?
-      (emit-indent parser)
-      (emit parser pre))
+      (emit-pre parser pre))
     (let [pre (when standalone? (not-empty pre))
           post (when standalone? (not-empty (read-line parser)))]
       (f pre post))))
@@ -111,8 +119,7 @@
 
 (defn- parse-partial [parser pre]
   (let [name (read-until parser *close-delim*)]
-    (emit-indent parser)
-    (emit parser pre)
+    (emit-pre parser pre)
     (emit parser (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))))
 
 (defn- parse-comment [parser pre]
@@ -122,8 +129,7 @@
         (-> (nodes/->Comment [comment])
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
             ((:out parser)))))
-    (do (emit-indent parser)
-        (emit parser pre)
+    (do (emit-pre parser pre)
         (loop [acc [(read-line parser)]]
           (if-let [comment (read-until parser *close-delim*)]
             (emit parser (nodes/->Comment (conj acc comment)))
@@ -169,18 +175,23 @@
 
 (defn- parse* [parser]
   (loop [parser parser]
-    (let [continue? (if-let [pre (read-until parser *open-delim*)]
-                      (or (parse-tag parser pre) (zero? (:depth parser)))
-                      (if-let [line (read-line parser)]
-                        (do (emit-indent parser)
-                            (emit parser line)
+    (let [padding (when (and (:indent parser)
+                             (not (:first? parser))
+                             (zero? (col-num parser)))
+                    (:indent parser))
+          parser' (cond-> parser padding (assoc :padding padding))
+          continue? (if-let [pre (read-until parser' *open-delim*)]
+                      (or (parse-tag parser' pre) (zero? (:depth parser')))
+                      (if-let [line (read-line parser')]
+                        (do (when padding (emit parser' padding))
+                            (emit parser' line)
                             true)
-                        (when (pos? (:depth parser))
+                        (when (pos? (:depth parser'))
                           (assert false "Missed section-end tag"))))]
       (when continue?
-        (-> (if (:first? parser)
-              (assoc parser :first? false)
-              parser)
+        (-> (cond-> parser'
+              (:first? parser')
+              (assoc :first? false))
             (recur))))))
 
 (defn parse
