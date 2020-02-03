@@ -1,9 +1,8 @@
 (ns pogonos.protocols
-  (:refer-clojure :exclude [read resolve]))
+  (:refer-clojure :exclude [read-line resolve]))
 
 (defprotocol IReader
-  (read [this])
-  (unread [this s]))
+  (read-line [this]))
 
 (defprotocol IOutput
   (append [this x])
