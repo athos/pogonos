@@ -106,3 +106,6 @@
 (defn unread-char [reader]
   (set-col-num! reader (dec (col-num reader)))
   nil)
+
+(defn end? [reader]
+  (nil? (with-current-line reader identity)))

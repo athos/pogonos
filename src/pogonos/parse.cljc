@@ -11,10 +11,10 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defrecord Parser [in out depth first?])
+(defrecord Parser [in out depth])
 
 (defn make-parser [in out]
-  (->Parser (read/make-line-buffered-reader in) out 0 true))
+  (->Parser (read/make-line-buffered-reader in) out 0))
 
 (defn- read-char [{:keys [in]}]
   (read/read-char in))
@@ -42,9 +42,19 @@
 (defn- emit [parser x]
   ((:out parser) x))
 
-(defn- emit-pre [{:keys [padding] :as parser} pre]
-  (some->> (not-empty padding) (emit parser))
+(defn- emit-pre [parser pre]
   (some->> (not-empty pre) (emit parser)))
+
+(defn- enable-indent-insertion [parser]
+  (update parser :out
+          (fn [out]
+            (if-let [indent (:indent parser)]
+              (fn [x]
+                (out x)
+                (when (and (string? x) (str/ends-with? x "\n")
+                           (not (read/end? (:in parser))))
+                  (out indent)))
+              out))))
 
 (defn- parse-keys [s]
   (->> (str/split s #"\.")
@@ -107,6 +117,7 @@
           (-> parser
               (assoc :out out')
               (update :depth inc)
+              (enable-indent-insertion)
               parse*))))))
 
 (defn- parse-close-section [parser pre]
@@ -174,30 +185,22 @@
     (assert false "Unexpected end of line")))
 
 (defn- parse* [parser]
-  (loop [parser parser]
-    (let [padding (when (and (:indent parser)
-                             (not (:first? parser))
-                             (zero? (col-num parser)))
-                    (:indent parser))
-          parser' (cond-> parser padding (assoc :padding padding))
-          continue? (if-let [pre (read-until parser' *open-delim*)]
-                      (or (parse-tag parser' pre) (zero? (:depth parser')))
-                      (if-let [line (read-line parser')]
-                        (do (when padding (emit parser' padding))
-                            (emit parser' line)
-                            true)
-                        (when (pos? (:depth parser'))
-                          (assert false "Missed section-end tag"))))]
-      (when continue?
-        (-> (cond-> parser'
-              (:first? parser')
-              (assoc :first? false))
-            (recur))))))
+  (loop []
+    (if-let [pre (read-until parser *open-delim*)]
+      (when (or (parse-tag parser pre) (zero? (:depth parser)))
+        (recur))
+      (if-let [line (read-line parser)]
+        (do (emit parser line)
+            (recur))
+        (when (pos? (:depth parser))
+          (assert false "Missed section-end tag"))))))
 
 (defn parse
   ([in out] (parse in out {}))
   ([in out {:keys [open-delim close-delim indent]}]
    (binding [*open-delim* (or open-delim default-open-delim)
              *close-delim* (or close-delim default-close-delim)]
-     (parse* (cond-> (make-parser in out)
-               indent (assoc :indent indent))))))
+     (let [parser (-> (make-parser in out)
+                      (cond-> indent (assoc :indent indent))
+                      (enable-indent-insertion))]
+       (parse* parser)))))
