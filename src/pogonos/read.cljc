@@ -1,5 +1,5 @@
 (ns pogonos.read
-  (:refer-clojure :exclude [read read-line])
+  (:refer-clojure :exclude [read-line])
   (:require [clojure.string :as str]
             #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]
