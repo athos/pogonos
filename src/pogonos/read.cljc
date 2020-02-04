@@ -43,7 +43,7 @@
 
 (declare read-line)
 
-(deftype LineBufferedReader
+(deftype LineBufferingReader
     [in
      ^:unsynchronized-mutable line
      ^:unsynchronized-mutable lnum
@@ -63,10 +63,10 @@
   (read-line [this]
     (read-line this)))
 
-(defn make-line-buffered-reader [in]
-  (->LineBufferedReader in nil 0 0))
+(defn make-line-buffering-reader [in]
+  (->LineBufferingReader in nil 0 0))
 
-(defn- read-line* [^LineBufferedReader reader]
+(defn- read-line* [^LineBufferingReader reader]
   (let [prev (line reader)
         line (proto/read-line (base-reader reader))]
     (set-line! reader line)

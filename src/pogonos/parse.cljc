@@ -14,7 +14,7 @@
 (defrecord Parser [in out depth])
 
 (defn make-parser [in out]
-  (->Parser (read/make-line-buffered-reader in) out 0))
+  (->Parser (read/make-line-buffering-reader in) out 0))
 
 (defn- read-char [{:keys [in]}]
   (read/read-char in))
