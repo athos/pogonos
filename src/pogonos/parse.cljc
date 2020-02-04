@@ -72,14 +72,14 @@
     (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
     (assert false "broken variable tag")))
 
-(defn- standalone? [parser pre]
-  (and (str/blank? pre)
+(defn- standalone? [{:keys [in]} pre start]
+  (and (= start (count pre))
+       (str/blank? pre)
        ;; FIXME
-       (str/blank? (subs (read/line (:in parser))
-                         (read/col-num (:in parser))))))
+       (str/blank? (subs (read/line in) (read/col-num in)))))
 
-(defn- with-surrounding-whitespaces-processed [parser pre f]
-  (let [standalone? (standalone? parser pre)]
+(defn- with-surrounding-whitespaces-processed [parser pre start f]
+  (let [standalone? (standalone? parser pre start)]
     (when-not standalone?
       (emit-pre parser pre))
     (let [pre (when standalone? (not-empty pre))
@@ -88,7 +88,7 @@
 
 (declare parse*)
 
-(defn- parse-open-section [parser pre inverted?]
+(defn- parse-open-section [parser pre start inverted?]
   (let [name (read-until parser *close-delim*)
         keys (parse-keys (pstr/trim name))
         children (volatile! [])
@@ -98,7 +98,7 @@
         ;; in case of lambdas applied to the section
         open *open-delim*
         close *close-delim*]
-    (with-surrounding-whitespaces-processed parser pre
+    (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (letfn [(out' [x]
                   (vswap! children conj x)
@@ -120,9 +120,9 @@
               (enable-indent-insertion)
               parse*))))))
 
-(defn- parse-close-section [parser pre]
+(defn- parse-close-section [parser pre start]
   (let [name (read-until parser *close-delim*)]
-    (with-surrounding-whitespaces-processed parser pre
+    (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (-> (nodes/->SectionEnd (parse-keys (pstr/trim name)))
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
@@ -133,9 +133,9 @@
     (emit-pre parser pre)
     (emit parser (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))))
 
-(defn- parse-comment [parser pre]
+(defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
-    (with-surrounding-whitespaces-processed parser pre
+    (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (-> (nodes/->Comment [comment])
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
@@ -148,7 +148,7 @@
               (recur (conj acc line))
               (assert false "}} expected")))))))
 
-(defn- parse-set-delimiters [parser pre]
+(defn- parse-set-delimiters [parser pre start]
   (let [delims (read-until parser *close-delim*)
         [_ open close] (-> delims
                            (subs 0 (dec (count delims)))
@@ -158,26 +158,26 @@
         close (pstr/trim close)]
     (set! *open-delim* open)
     (set! *close-delim* close)
-    (with-surrounding-whitespaces-processed parser pre
+    (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (-> (nodes/->SetDelimiter open close)
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
             ((:out parser)))))))
 
-(defn- parse-tag [parser pre]
+(defn- parse-tag [parser pre start]
   (if-let [c (read-char parser)]
     (if (= c \/)
-      (do (parse-close-section parser pre)
+      (do (parse-close-section parser pre start)
           false)
       (do (case c
-            \# (parse-open-section parser pre false)
-            \^ (parse-open-section parser pre true)
+            \# (parse-open-section parser pre start false)
+            \^ (parse-open-section parser pre start true)
             \& (parse-variable parser pre true)
             \> (parse-partial parser pre)
-            \! (parse-comment parser pre)
-            \= (parse-set-delimiters parser pre)
+            \! (parse-comment parser pre start)
+            \= (parse-set-delimiters parser pre start)
             \{ (if (= *open-delim* default-open-delim)
-                 (parse-unescaped-variable parser pre)
+                 (parse-unescaped-variable parser pre start)
                  (assert false (str "Unexpected { after changed open delim: " *open-delim*)))
             (do (unread-char parser)
                 (parse-variable parser pre false)))
@@ -187,8 +187,10 @@
 (defn- parse* [parser]
   (loop []
     (if-let [pre (read-until parser *open-delim*)]
-      (when (or (parse-tag parser pre) (zero? (:depth parser)))
-        (recur))
+      (let [start (- (col-num parser) (count *open-delim*))]
+        (when (or (parse-tag parser pre start)
+                  (zero? (:depth parser)))
+          (recur)))
       (if-let [line (read-line parser)]
         (do (emit parser line)
             (recur))
