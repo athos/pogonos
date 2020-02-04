@@ -131,7 +131,10 @@
 (defn- parse-partial [parser pre]
   (let [name (read-until parser *close-delim*)]
     (emit-pre parser pre)
-    (emit parser (nodes/->Partial (pstr/trim name) (str/replace pre #"\S" " ")))))
+    (->> (str/replace pre #"\S" " ")
+         (str (:indent parser)) ;; prepend current indent
+         (nodes/->Partial (pstr/trim name))
+         (emit parser))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
