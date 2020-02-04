@@ -75,8 +75,7 @@
 (defn- standalone? [{:keys [in]} pre start]
   (and (= start (count pre))
        (str/blank? pre)
-       ;; FIXME
-       (str/blank? (subs (read/line in) (read/col-num in)))))
+       (read/blank-trailing? in)))
 
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]

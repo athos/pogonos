@@ -109,3 +109,15 @@
 
 (defn end? [reader]
   (nil? (with-current-line reader identity)))
+
+(defn blank-trailing? [reader]
+  ;; the implementation is a little bit tricky since with-current-line
+  ;; returns nil when next line is nil
+  (-> (with-current-line reader
+        (fn [line]
+          (->> (subs line (col-num reader))
+               (reduce (fn [_ c]
+                         (when-not (#{\space \tab \newline} c)
+                           (reduced true)))
+                       false))))
+      not))
