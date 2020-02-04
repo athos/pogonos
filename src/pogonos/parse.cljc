@@ -39,11 +39,8 @@
       0
       col)))
 
-(defn- emit [parser x]
-  ((:out parser) x))
-
-(defn- emit-pre [parser pre]
-  (some->> (not-empty pre) (emit parser)))
+(defn- emit [{:keys [out]} x]
+  (some-> (not-empty x) out))
 
 (defn- enable-indent-insertion [parser]
   (update parser :out
@@ -61,13 +58,13 @@
        (mapv keyword)))
 
 (defn- parse-variable [parser pre unescaped?]
-  (emit-pre parser pre)
+  (emit parser pre)
   (if-let [name (read-until parser *close-delim*)]
     (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
     (assert false "broken variable tag")))
 
 (defn- parse-unescaped-variable [parser pre]
-  (emit-pre parser pre)
+  (emit parser pre)
   (if-let [name (read-until parser "}}}")]
     (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
     (assert false "broken variable tag")))
@@ -80,7 +77,7 @@
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]
     (when-not standalone?
-      (emit-pre parser pre))
+      (emit parser pre))
     (let [pre (when standalone? (not-empty pre))
           post (when standalone? (not-empty (read-line parser)))]
       (f pre post))))
@@ -129,7 +126,7 @@
 
 (defn- parse-partial [parser pre]
   (let [name (read-until parser *close-delim*)]
-    (emit-pre parser pre)
+    (emit parser pre)
     (->> (str/replace pre #"\S" " ")
          (str (:indent parser)) ;; prepend current indent
          (nodes/->Partial (pstr/trim name))
@@ -142,7 +139,7 @@
         (-> (nodes/->Comment [comment])
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
             ((:out parser)))))
-    (do (emit-pre parser pre)
+    (do (emit parser pre)
         (loop [acc [(read-line parser)]]
           (if-let [comment (read-until parser *close-delim*)]
             (emit parser (nodes/->Comment (conj acc comment)))
