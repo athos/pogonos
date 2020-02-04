@@ -1,5 +1,6 @@
 (ns pogonos.output
-  (:require #?(:clj [clojure.java.io :as io])
+  (:require [clojure.string :as str]
+            #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]))
 
 (def ^{:arglists '([output s])} append proto/append)
@@ -8,7 +9,9 @@
 (defrecord StandardOutput []
   proto/IOutput
   (append [this s]
-    (print s))
+    (print s)
+    (when (str/ends-with? s "\n")
+      (flush)))
   (complete [this]
     (flush)))
 
