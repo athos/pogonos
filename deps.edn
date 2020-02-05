@@ -5,6 +5,13 @@
             {athos/clj-check {:git/url "https://github.com/athos/clj-check.git"
                               :sha "b48d4e7000586529f81c1e29069b503b57259514"}}
             :main-opts ["-m" "clj-check.check"]}
+           :test
+           {:extra-paths ["test" "test-resources"]
+            :extra-deps {org.clojure/data.json {:mvn/version "0.2.7"}}
+            :main-opts ["-m" "pogonos.test-runner"]}
            :cljs
            {:extra-deps
-            {org.clojure/clojurescript {:mvn/version "1.10.597"}}}}}
+            {org.clojure/clojurescript {:mvn/version "1.10.597"}}}
+           :test-cljs
+           {:main-opts ["-m" "cljs.main" "-re" "node"
+                        "-m" "pogonos.test-runner"]}}}

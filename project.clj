@@ -5,5 +5,8 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :profiles {:provided
              {:dependencies [[org.clojure/clojure "1.10.1"]
-                             [org.clojure/clojurescript "1.10.597"]]}}
+                             [org.clojure/clojurescript "1.10.597"]]}
+             :test
+             {:dependencies [[org.clojure/data.json "0.2.7"]]
+              :resource-paths ["test-resources"]}}
   :repl-options {:init-ns pogonos.core})
