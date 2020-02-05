@@ -176,7 +176,7 @@
             \! (parse-comment parser pre start)
             \= (parse-set-delimiters parser pre start)
             \{ (if (= *open-delim* default-open-delim)
-                 (parse-unescaped-variable parser pre start)
+                 (parse-unescaped-variable parser pre)
                  (assert false (str "Unexpected { after changed open delim: " *open-delim*)))
             (do (unread-char parser)
                 (parse-variable parser pre false)))
