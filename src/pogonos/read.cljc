@@ -117,7 +117,7 @@
         (fn [line]
           (->> (subs line (col-num reader))
                (reduce (fn [_ c]
-                         (when-not (#{\space \tab \newline} c)
+                         (when-not (#{\space \tab \return \newline} c)
                            (reduced true)))
                        false))))
       not))
