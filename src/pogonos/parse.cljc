@@ -124,13 +124,15 @@
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
             ((:out parser)))))))
 
-(defn- parse-partial [parser pre]
+(defn- parse-partial [parser pre start]
   (let [name (read-until parser *close-delim*)]
-    (emit parser pre)
-    (->> (str/replace pre #"\S" " ")
-         (str (:indent parser)) ;; prepend current indent
-         (nodes/->Partial (pstr/trim name))
-         (emit parser))))
+    (with-surrounding-whitespaces-processed parser pre start
+      (fn [pre post]
+        (emit parser pre)
+        (->> (str/replace (str pre) #"\S" " ")
+             (str (:indent parser)) ;; prepend current indent
+             (nodes/->Partial (pstr/trim name))
+             (emit parser))))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
@@ -172,7 +174,7 @@
             \# (parse-open-section parser pre start false)
             \^ (parse-open-section parser pre start true)
             \& (parse-variable parser pre true)
-            \> (parse-partial parser pre)
+            \> (parse-partial parser pre start)
             \! (parse-comment parser pre start)
             \= (parse-set-delimiters parser pre start)
             \{ (if (= *open-delim* default-open-delim)
