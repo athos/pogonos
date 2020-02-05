@@ -100,6 +100,5 @@
 
   #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
-    (if-let [r (pres/resolve *partials-resolver* (:name this))]
-      (parse/parse r #(proto/render % ctx out) {:indent (:indent this)})
-      (assert false (str "Partial named \"" (:name this) "\" not found")))))
+    (when-let [r (pres/resolve *partials-resolver* (:name this))]
+      (parse/parse r #(proto/render % ctx out) {:indent (:indent this)}))))
