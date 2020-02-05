@@ -135,19 +135,21 @@
              (emit parser))))))
 
 (defn- parse-comment [parser pre start]
-  (if-let [comment (read-until parser *close-delim*)]
+  (let [comment (read-until parser *close-delim*)]
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
-        (-> (nodes/->Comment [comment])
-            (cond-> (or pre post) (with-meta {:pre pre :post post}))
-            ((:out parser)))))
-    (do (emit parser pre)
-        (loop [acc [(read-line parser)]]
-          (if-let [comment (read-until parser *close-delim*)]
-            (emit parser (nodes/->Comment (conj acc comment)))
-            (if-let [line (read-line parser)]
-              (recur (conj acc line))
-              (assert false "}} expected")))))))
+        (if comment
+          (-> (nodes/->Comment [comment])
+              (cond-> (or pre post) (with-meta {:pre pre :post post}))
+              ((:out parser)))
+          (loop [acc [(read-line parser)]]
+            (if-let [comment (read-until parser *close-delim*)]
+              (do (when (read/blank-trailing? (:in parser))
+                    (read-line parser))
+                  (emit parser (nodes/->Comment (conj acc comment))))
+              (if-let [line (read-line parser)]
+                (recur (conj acc line))
+                (assert false "}} expected")))))))))
 
 (defn- parse-set-delimiters [parser pre start]
   (let [delims (read-until parser *close-delim*)
