@@ -4,7 +4,7 @@
             #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]
             [pogonos.strings :as pstr])
-  #?(:clj (:import [java.io BufferedReader Closeable])))
+  #?(:clj (:import [java.io Reader Closeable])))
 
 (deftype StringReader [src ^:unsynchronized-mutable offset]
   proto/IReader
@@ -20,17 +20,41 @@
   (StringReader. s 0))
 
 #?(:clj
-   (deftype FileReader [^BufferedReader reader]
+   (deftype FileReader
+       [^Reader reader
+        ^chars buf
+        ^:unsynchronized-mutable ^int offset
+        ^:unsynchronized-mutable ^int size]
      proto/IReader
      (read-line [this]
-       (some-> (.readLine reader) (str \newline)))
+       (loop [^StringBuilder sb nil]
+         (when (>= offset size)
+           (set! size (.read reader buf))
+           (set! offset (int 0)))
+         (if (neg? size)
+           (when sb (.toString sb))
+           (let [sb (or sb (StringBuilder.))
+                 i (int
+                    (loop [i offset]
+                      (if (< i size)
+                        (if (= (aget buf i) \newline)
+                          (inc i)
+                          (recur (inc i)))
+                        -1)))]
+             (if (>= i 0)
+               (do (.append sb buf offset (- i offset))
+                   (set! offset i)
+                   (.toString sb))
+               (do (.append sb buf offset (- size offset))
+                   (set! offset size)
+                   (recur sb)))))))
      Closeable
      (close [this]
        (.close reader))))
 
 #?(:clj
    (defn make-file-reader [file]
-     (FileReader. (io/reader file))))
+     (FileReader. (io/reader file) (char-array 256) 0 0)))
 
 (defprotocol ILineBufferingReader
   (set-line! [this l])
