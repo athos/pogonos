@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [resolve])
   (:require #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]
-            [pogonos.read :as read]))
+            [pogonos.reader :as reader]))
 
 #?(:clj
    (defn- resolve-from-base-path [base-path name]

@@ -4,7 +4,7 @@
             [pogonos.nodes :as nodes]
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
-            [pogonos.read :as read]
+            [pogonos.reader :as reader]
             [pogonos.stringify :as stringify])
   #?(:clj
      (:import [pogonos.nodes
@@ -32,7 +32,7 @@
   (let [val (lookup ctx (:keys var))
         escape-fn (if unescaped? identity escape)]
     (if (fn? val)
-      (parse/parse (read/make-string-reader (str (val)))
+      (parse/parse (reader/make-string-reader (str (val)))
                    #(proto/render % ctx (comp out escape-fn)))
       (out (escape-fn (str val))))))
 
@@ -82,7 +82,7 @@
                   body (-> (pop (:nodes this))
                            (stringify/stringify open close)
                            val)]
-              (parse/parse (read/make-string-reader body)
+              (parse/parse (reader/make-string-reader body)
                            #(proto/render % ctx out)
                            {:open-delim open :close-delim close}))
 

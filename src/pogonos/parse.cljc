@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [read-line])
   (:require [clojure.string :as str]
             [pogonos.nodes :as nodes]
-            [pogonos.read :as read]
+            [pogonos.reader :as reader]
             [pogonos.strings :as pstr])
   #?(:clj (:import [pogonos.nodes SectionEnd])))
 
@@ -14,28 +14,28 @@
 (defrecord Parser [in out depth])
 
 (defn make-parser [in out]
-  (->Parser (read/make-line-buffering-reader in) out 0))
+  (->Parser (reader/make-line-buffering-reader in) out 0))
 
 (defn- read-char [{:keys [in]}]
-  (read/read-char in))
+  (reader/read-char in))
 
 (defn- unread-char [{:keys [in]}]
-  (read/unread-char in))
+  (reader/unread-char in))
 
 (defn- read-line [{:keys [in]}]
-  (read/read-line in))
+  (reader/read-line in))
 
 (defn- read-until [{:keys [in]} s]
-  (read/read-until in s))
+  (reader/read-until in s))
 
 (defn- line-num [{:keys [in]}]
-  (cond-> (read/line-num in)
-    (>= (read/col-num in) (count (read/line in)))
+  (cond-> (reader/line-num in)
+    (>= (reader/col-num in) (count (reader/line in)))
     inc))
 
 (defn- col-num [{:keys [in]}]
-  (let [col (read/col-num in)]
-    (if (>= col (count (read/line in)))
+  (let [col (reader/col-num in)]
+    (if (>= col (count (reader/line in)))
       0
       col)))
 
@@ -49,7 +49,7 @@
               (fn [x]
                 (out x)
                 (when (and (string? x) (str/ends-with? x "\n")
-                           (not (read/end? (:in parser))))
+                           (not (reader/end? (:in parser))))
                   (out indent)))
               out))))
 
@@ -72,7 +72,7 @@
 (defn- standalone? [{:keys [in]} pre start]
   (and (= start (count pre))
        (str/blank? pre)
-       (read/blank-trailing? in)))
+       (reader/blank-trailing? in)))
 
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]
@@ -144,7 +144,7 @@
               ((:out parser)))
           (loop [acc [(read-line parser)]]
             (if-let [comment (read-until parser *close-delim*)]
-              (do (when (read/blank-trailing? (:in parser))
+              (do (when (reader/blank-trailing? (:in parser))
                     (read-line parser))
                   (emit parser (nodes/->Comment (conj acc comment))))
               (if-let [line (read-line parser)]

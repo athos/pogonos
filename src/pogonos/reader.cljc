@@ -1,4 +1,4 @@
-(ns pogonos.read
+(ns pogonos.reader
   (:refer-clojure :exclude [read-line])
   (:require [clojure.string :as str]
             #?(:clj [clojure.java.io :as io])

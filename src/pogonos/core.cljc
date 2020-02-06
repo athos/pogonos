@@ -3,12 +3,12 @@
             [pogonos.output :as output]
             [pogonos.parse :as parse]
             #?(:clj [pogonos.partials-resolver :as pres])
-            [pogonos.read :as read]
+            [pogonos.reader :as reader]
             [pogonos.render :as render])
   #?(:clj (:import [java.io Closeable])))
 
 (defn parse [s]
-  (let [in (read/make-string-reader s)
+  (let [in (reader/make-string-reader s)
         buf (volatile! [])
         out (fn [x]
               (when-not (satisfies? nodes/Invisible x)
@@ -38,14 +38,14 @@
   ([s data]
    (render-string s data {}))
   ([s data opts]
-   (render-input (read/make-string-reader s) data opts)))
+   (render-input (reader/make-string-reader s) data opts)))
 
 #?(:clj
    (defn render-file
      ([file data]
       (render-file file data {}))
      ([file data opts]
-      (with-open [in ^Closeable (read/make-file-reader file)]
+      (with-open [in ^Closeable (reader/make-file-reader file)]
         (render-input in data opts)))))
 
 #?(:clj
