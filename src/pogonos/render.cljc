@@ -106,4 +106,4 @@
         (finally
           #?(:clj
              (when (instance? java.io.Closeable r)
-               (.close java.io.Closeable r))))))))
+               (.close ^java.io.Closeable r))))))))
