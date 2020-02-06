@@ -32,7 +32,7 @@
    (defn make-file-reader [file]
      (FileReader. (io/reader file))))
 
-(defprotocol ILineBufferedReader
+(defprotocol ILineBufferingReader
   (set-line! [this l])
   (set-line-num! [this n])
   (set-col-num! [this n])
@@ -48,7 +48,7 @@
      ^:unsynchronized-mutable line
      ^:unsynchronized-mutable lnum
      ^:unsynchronized-mutable cnum]
-  ILineBufferedReader
+  ILineBufferingReader
   (set-line! [this l]
     (set! line l))
   (set-line-num! [this n]
