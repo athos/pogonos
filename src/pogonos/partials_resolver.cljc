@@ -46,11 +46,11 @@
      ;; FIXME: CLJS does not have APersistentMap??
      :cljs PersistentArrayMap)
   (resolve [this name]
-    (some-> (get this (keyword name)) read/make-string-reader))
+    (some-> (get this (keyword name)) reader/make-string-reader))
 
   #?(:clj clojure.lang.Fn :cljs function)
   (resolve [this name]
-    (some-> (this (keyword name)) read/make-string-reader)))
+    (some-> (this (keyword name)) reader/make-string-reader)))
 
 (defrecord CompositePartialsResolver [resolvers]
   proto/IPartialsResolver
