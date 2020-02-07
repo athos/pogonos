@@ -11,10 +11,10 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defrecord Parser [in out depth])
+(defrecord Parser [in out])
 
 (defn make-parser [in out]
-  (->Parser (reader/make-line-buffering-reader in) out 0))
+  (->Parser (reader/make-line-buffering-reader in) out))
 
 (defn- read-char [{:keys [in]}]
   (reader/read-char in))
@@ -99,30 +99,32 @@
         (letfn [(out' [x]
                   (vswap! children conj x)
                   (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
-                    (if (= keys (:keys x))
-                      (-> ((if inverted? nodes/->Inverted nodes/->Section)
-                           keys @children)
-                          (cond->
+                    (-> ((if inverted? nodes/->Inverted nodes/->Section)
+                         keys @children)
+                        (cond->
                             (or (not= open default-open-delim)
                                 (not= close default-close-delim))
-                            (vary-meta assoc :open open :close close)
-                            (or pre post)
-                            (vary-meta assoc :pre pre :post post))
-                          ((:out parser)))
-                      (assert false (str "Unexpected tag " (:keys x) " occurred")))))]
+                          (vary-meta assoc :open open :close close)
+                          (or pre post)
+                          (vary-meta assoc :pre pre :post post))
+                        ((:out parser)))))]
           (-> parser
-              (assoc :out out')
-              (update :depth inc)
+              (assoc :out out' :section keys)
               (enable-indent-insertion)
               parse*))))))
 
 (defn- parse-close-section [parser pre start]
-  (let [name (read-until parser *close-delim*)]
-    (with-surrounding-whitespaces-processed parser pre start
-      (fn [pre post]
-        (-> (nodes/->SectionEnd (parse-keys (pstr/trim name)))
-            (cond-> (or pre post) (with-meta {:pre pre :post post}))
-            ((:out parser)))))))
+  (let [name (read-until parser *close-delim*)
+        keys (parse-keys (pstr/trim name))]
+    (if (= keys (:section parser))
+      (with-surrounding-whitespaces-processed parser pre start
+        (fn [pre post]
+          (-> (nodes/->SectionEnd keys)
+              (cond-> (or pre post) (with-meta {:pre pre :post post}))
+              ((:out parser)))))
+      (assert false
+              (str "section-end tag for " (:section parser)
+                   " expected, but got " keys)))))
 
 (defn- parse-partial [parser pre start]
   (let [name (read-until parser *close-delim*)]
@@ -192,13 +194,13 @@
     (if-let [pre (read-until parser *open-delim*)]
       (let [start (- (col-num parser) (count *open-delim*))]
         (when (or (parse-tag parser pre start)
-                  (zero? (:depth parser)))
+                  (nil? (:section parser)))
           (recur)))
       (if-let [line (read-line parser)]
         (do (emit parser line)
             (recur))
-        (when (pos? (:depth parser))
-          (assert false "Missed section-end tag"))))))
+        (when-let [section (:section parser)]
+          (assert false (str "Missing section-end tag for " section)))))))
 
 (defn parse
   ([in out] (parse in out {}))
