@@ -34,22 +34,11 @@
 (defn- current-line [{:keys [in]}]
   (reader/line in))
 
-(defn- raw-line-num [{:keys [in]}]
+(defn- line-num [{:keys [in]}]
   (reader/line-num in))
 
-(defn- raw-col-num [{:keys [in]}]
+(defn- col-num [{:keys [in]}]
   (reader/col-num in))
-
-(defn- line-num [parser]
-  (cond-> (raw-line-num parser)
-    (>= (raw-col-num parser) (count (current-line parser)))
-    inc))
-
-(defn- col-num [parser]
-  (let [col (raw-col-num parser)]
-    (if (>= col (count (current-line parser)))
-      0
-      col)))
 
 (defn- emit [{:keys [out]} x]
   (some-> (not-empty x) out))
@@ -81,7 +70,7 @@
   ([parser] (extract-tag-content parser *close-delim*))
   ([parser close-delim]
    (let [line (current-line parser)
-         line-num (raw-line-num parser)]
+         line-num (line-num parser)]
      (if-let [content (read-until parser close-delim)]
        content
        (let [line (strip-newline line)]
@@ -157,7 +146,7 @@
                   *open-delim* "/" (stringify-keys (:section parser)) *close-delim*
                   " tag, but got "
                   *open-delim* "/" (stringify-keys keys) *close-delim*)
-             (current-line parser) (raw-line-num parser) start))))
+             (current-line parser) (line-num parser) start))))
 
 (defn- parse-partial [parser pre start]
   (let [name (extract-tag-content parser)]
@@ -179,7 +168,7 @@
               ((:out parser)))
           (loop [acc [(read-line parser)]]
             (let [prev-line (current-line parser)
-                  prev-line-num (raw-line-num parser)]
+                  prev-line-num (line-num parser)]
               (if-let [comment (read-until parser *close-delim*)]
                 (do (when (reader/blank-trailing? (:in parser))
                       (read-line parser))
@@ -210,7 +199,7 @@
 
 (defn- parse-tag [parser pre start]
   (let [line (current-line parser)
-        line-num (raw-line-num parser)
+        line-num (line-num parser)
         c (read-char parser)]
     (if (and c (not= c \newline))
       (if (= c \/)
@@ -239,9 +228,9 @@
 (defn- parse* [parser]
   (loop []
     (let [prev-line (current-line parser)
-          prev-line-num (raw-line-num parser)]
+          prev-line-num (line-num parser)]
       (if-let [pre (read-until parser *open-delim*)]
-        (let [start (- (raw-col-num parser) (count *open-delim*))]
+        (let [start (- (col-num parser) (count *open-delim*))]
           (when (or (parse-tag parser pre start)
                     (nil? (:section parser)))
             (recur)))
