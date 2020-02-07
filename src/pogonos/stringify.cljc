@@ -10,7 +10,7 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defn- stringify-keys [keys out]
+(defn stringify-keys [keys out]
   (if (empty? keys)
     (out ".")
     (do (out (name (first keys)))

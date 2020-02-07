@@ -1,8 +1,11 @@
 (ns pogonos.parse
   (:refer-clojure :exclude [read-line])
   (:require [clojure.string :as str]
+            [pogonos.error :refer [error]]
             [pogonos.nodes :as nodes]
+            [pogonos.output :as output]
             [pogonos.reader :as reader]
+            [pogonos.stringify :as stringify]
             [pogonos.strings :as pstr])
   #?(:clj (:import [pogonos.nodes SectionEnd])))
 
@@ -28,19 +31,31 @@
 (defn- read-until [{:keys [in]} s]
   (reader/read-until in s))
 
-(defn- line-num [{:keys [in]}]
-  (cond-> (reader/line-num in)
-    (>= (reader/col-num in) (count (reader/line in)))
+(defn- current-line [{:keys [in]}]
+  (reader/line in))
+
+(defn- raw-line-num [{:keys [in]}]
+  (reader/line-num in))
+
+(defn- raw-col-num [{:keys [in]}]
+  (reader/col-num in))
+
+(defn- line-num [parser]
+  (cond-> (raw-line-num parser)
+    (>= (raw-col-num parser) (count (current-line parser)))
     inc))
 
-(defn- col-num [{:keys [in]}]
-  (let [col (reader/col-num in)]
-    (if (>= col (count (reader/line in)))
+(defn- col-num [parser]
+  (let [col (raw-col-num parser)]
+    (if (>= col (count (current-line parser)))
       0
       col)))
 
 (defn- emit [{:keys [out]} x]
   (some-> (not-empty x) out))
+
+(defn- strip-newline [s]
+  (str/replace s #"\n$" ""))
 
 (defn- enable-indent-insertion [parser]
   (update parser :out
@@ -57,17 +72,32 @@
   (->> (str/split s #"\.")
        (mapv keyword)))
 
+(defn- stringify-keys [keys]
+  (let [out (output/string-output)]
+    (stringify/stringify-keys keys #(output/append out %))
+    (output/complete out)))
+
+(defn- extract-tag-content
+  ([parser] (extract-tag-content parser *close-delim*))
+  ([parser close-delim]
+   (let [line (current-line parser)
+         line-num (raw-line-num parser)]
+     (if-let [content (read-until parser close-delim)]
+       content
+       (let [line (strip-newline line)]
+         (error :missing-close-delim
+                (str "Missing closing delimiter \"" close-delim "\"")
+                line line-num (count line)))))))
+
 (defn- parse-variable [parser pre unescaped?]
   (emit parser pre)
-  (if-let [name (read-until parser *close-delim*)]
-    (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))
-    (assert false "broken variable tag")))
+  (let [name (extract-tag-content parser)]
+    (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))))
 
 (defn- parse-unescaped-variable [parser pre]
   (emit parser pre)
-  (if-let [name (read-until parser "}}}")]
-    (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))
-    (assert false "broken variable tag")))
+  (let [name (extract-tag-content parser "}}}")]
+    (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))))
 
 (defn- standalone? [{:keys [in]} pre start]
   (and (= start (count pre))
@@ -85,7 +115,7 @@
 (declare parse*)
 
 (defn- parse-open-section [parser pre start inverted?]
-  (let [name (read-until parser *close-delim*)
+  (let [name (extract-tag-content parser)
         keys (parse-keys (pstr/trim name))
         children (volatile! [])
         ;; Delimiters may be changed before SectionEnd arrives.
@@ -114,7 +144,7 @@
               parse*))))))
 
 (defn- parse-close-section [parser pre start]
-  (let [name (read-until parser *close-delim*)
+  (let [name (extract-tag-content parser)
         keys (parse-keys (pstr/trim name))]
     (if (= keys (:section parser))
       (with-surrounding-whitespaces-processed parser pre start
@@ -122,12 +152,15 @@
           (-> (nodes/->SectionEnd keys)
               (cond-> (or pre post) (with-meta {:pre pre :post post}))
               ((:out parser)))))
-      (assert false
-              (str "section-end tag for " (:section parser)
-                   " expected, but got " keys)))))
+      (error :inconsistent-section-end
+             (str "Expected "
+                  *open-delim* "/" (stringify-keys (:section parser)) *close-delim*
+                  " tag, but got "
+                  *open-delim* "/" (stringify-keys keys) *close-delim*)
+             (current-line parser) (raw-line-num parser) start))))
 
 (defn- parse-partial [parser pre start]
-  (let [name (read-until parser *close-delim*)]
+  (let [name (extract-tag-content parser)]
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (emit parser pre)
@@ -145,16 +178,22 @@
               (cond-> (or pre post) (with-meta {:pre pre :post post}))
               ((:out parser)))
           (loop [acc [(read-line parser)]]
-            (if-let [comment (read-until parser *close-delim*)]
-              (do (when (reader/blank-trailing? (:in parser))
-                    (read-line parser))
-                  (emit parser (nodes/->Comment (conj acc comment))))
-              (if-let [line (read-line parser)]
-                (recur (conj acc line))
-                (assert false "}} expected")))))))))
+            (let [prev-line (current-line parser)
+                  prev-line-num (raw-line-num parser)]
+              (if-let [comment (read-until parser *close-delim*)]
+                (do (when (reader/blank-trailing? (:in parser))
+                      (read-line parser))
+                    (emit parser (nodes/->Comment (conj acc comment))))
+                (if-let [line (read-line parser)]
+                  (recur (conj acc line))
+                  (let [line (strip-newline prev-line)]
+                    (error :missing-close-delim
+                           (str "Missing closing delimiter \"" *close-delim* "\""
+                                " for comment tag")
+                           line prev-line-num (count line))))))))))))
 
 (defn- parse-set-delimiters [parser pre start]
-  (let [delims (read-until parser *close-delim*)
+  (let [delims (extract-tag-content parser)
         [_ open close] (-> delims
                            (subs 0 (dec (count delims)))
                            (pstr/trim)
@@ -170,37 +209,50 @@
             ((:out parser)))))))
 
 (defn- parse-tag [parser pre start]
-  (if-let [c (read-char parser)]
-    (if (= c \/)
-      (do (parse-close-section parser pre start)
-          false)
-      (do (case c
-            \# (parse-open-section parser pre start false)
-            \^ (parse-open-section parser pre start true)
-            \& (parse-variable parser pre true)
-            \> (parse-partial parser pre start)
-            \! (parse-comment parser pre start)
-            \= (parse-set-delimiters parser pre start)
-            \{ (if (= *open-delim* default-open-delim)
-                 (parse-unescaped-variable parser pre)
-                 (assert false (str "Unexpected { after changed open delim: " *open-delim*)))
-            (do (unread-char parser)
-                (parse-variable parser pre false)))
-          true))
-    (assert false "Unexpected end of line")))
+  (let [line (current-line parser)
+        line-num (raw-line-num parser)
+        c (read-char parser)]
+    (if (and c (not= c \newline))
+      (if (= c \/)
+        (do (parse-close-section parser pre start)
+            false)
+        (do (case c
+              \# (parse-open-section parser pre start false)
+              \^ (parse-open-section parser pre start true)
+              \& (parse-variable parser pre true)
+              \> (parse-partial parser pre start)
+              \! (parse-comment parser pre start)
+              \= (parse-set-delimiters parser pre start)
+              \{ (if (= *open-delim* default-open-delim)
+                   (parse-unescaped-variable parser pre)
+                   (error :invalid-unescaped-variable-tag
+                          (str "Unescaped variable tag \"" *open-delim* "{\" "
+                               "cannot be used while changing delimiters")
+                          line line-num start))
+              (do (unread-char parser)
+                  (parse-variable parser pre false)))
+            true))
+      (error :incomplete-tag
+             (str "Found incomplete tag \"" *open-delim* "\"")
+             (strip-newline line) line-num start))))
 
 (defn- parse* [parser]
   (loop []
-    (if-let [pre (read-until parser *open-delim*)]
-      (let [start (- (col-num parser) (count *open-delim*))]
-        (when (or (parse-tag parser pre start)
-                  (nil? (:section parser)))
-          (recur)))
-      (if-let [line (read-line parser)]
-        (do (emit parser line)
-            (recur))
-        (when-let [section (:section parser)]
-          (assert false (str "Missing section-end tag for " section)))))))
+    (let [prev-line (current-line parser)
+          prev-line-num (raw-line-num parser)]
+      (if-let [pre (read-until parser *open-delim*)]
+        (let [start (- (raw-col-num parser) (count *open-delim*))]
+          (when (or (parse-tag parser pre start)
+                    (nil? (:section parser)))
+            (recur)))
+        (if-let [line (read-line parser)]
+          (do (emit parser line)
+              (recur))
+          (when (:section parser)
+            (error :missing-section-end
+                   (str "Missing section-end tag " *open-delim* "/"
+                        (stringify-keys (:section parser)) *close-delim*)
+                   prev-line prev-line-num (count prev-line))))))))
 
 (defn parse
   ([in out] (parse in out {}))
