@@ -103,7 +103,7 @@
 
 (declare parse*)
 
-(defn- parse-open-section [parser pre start inverted?]
+(defn- parse-section-start [parser pre start inverted?]
   (let [name (extract-tag-content parser)
         keys (parse-keys (pstr/trim name))
         children (volatile! [])
@@ -132,7 +132,7 @@
               (enable-indent-insertion)
               parse*))))))
 
-(defn- parse-close-section [parser pre start]
+(defn- parse-section-end [parser pre start]
   (let [name (extract-tag-content parser)
         keys (parse-keys (pstr/trim name))]
     (if (= keys (:section parser))
@@ -203,11 +203,11 @@
         c (read-char parser)]
     (if (and c (not= c \newline))
       (if (= c \/)
-        (do (parse-close-section parser pre start)
+        (do (parse-section-end parser pre start)
             false)
         (do (case c
-              \# (parse-open-section parser pre start false)
-              \^ (parse-open-section parser pre start true)
+              \# (parse-section-start parser pre start false)
+              \^ (parse-section-start parser pre start true)
               \& (parse-variable parser pre true)
               \> (parse-partial parser pre start)
               \! (parse-comment parser pre start)
