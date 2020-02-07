@@ -182,20 +182,28 @@
                            line prev-line-num (count line))))))))))))
 
 (defn- parse-set-delimiters [parser pre start]
-  (let [delims (extract-tag-content parser)
-        [_ open close] (-> delims
-                           (subs 0 (dec (count delims)))
-                           (pstr/trim)
-                           (pstr/split " "))
-        open (pstr/trim open)
-        close (pstr/trim close)]
-    (set! *open-delim* open)
-    (set! *close-delim* close)
-    (with-surrounding-whitespaces-processed parser pre start
-      (fn [pre post]
-        (-> (nodes/->SetDelimiter open close)
-            (cond-> (or pre post) (with-meta {:pre pre :post post}))
-            ((:out parser)))))))
+  (let [line (current-line parser)
+        line-num (line-num parser)
+        delims (extract-tag-content parser (str \= *close-delim*))]
+    (if-let [[_ open close] (-> (pstr/trim delims) (pstr/split " "))]
+      (let [open (pstr/trim open)
+            close (pstr/trim close)]
+        (when (or (pstr/index-of open " " 0) (pstr/index-of close " " 0))
+          (error :invalid-set-delimiters
+                 (str "Invalid set delimiters tag "
+                      *open-delim* \= delims \= *close-delim*)
+                 line line-num start))
+        (set! *open-delim* open)
+        (set! *close-delim* close)
+        (with-surrounding-whitespaces-processed parser pre start
+          (fn [pre post]
+            (-> (nodes/->SetDelimiter open close)
+                (cond-> (or pre post) (with-meta {:pre pre :post post}))
+                ((:out parser))))))
+      (error :invalid-set-delimiters
+             (str "Invalid set delimiters tag "
+                  *open-delim* \= delims \= *close-delim*)
+             line line-num start))))
 
 (defn- parse-tag [parser pre start]
   (let [line (current-line parser)
