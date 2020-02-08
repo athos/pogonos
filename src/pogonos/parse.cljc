@@ -70,9 +70,14 @@
   ([parser] (extract-tag-content parser *close-delim*))
   ([parser close-delim]
    (let [line (current-line parser)
-         line-num (line-num parser)]
+         line-num (line-num parser)
+         col-num (col-num parser)]
      (if-let [content (read-until parser close-delim)]
-       content
+       (if-let [i (pstr/index-of content *open-delim* 0)]
+         (error :missing-close-delim
+                (str "Missing closing delimiter \"" close-delim "\"")
+                (strip-newline line) line-num (+ col-num (dec i)))
+         content)
        (let [line (strip-newline line)]
          (error :missing-close-delim
                 (str "Missing closing delimiter \"" close-delim "\"")
