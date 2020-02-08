@@ -8,7 +8,7 @@
    (defn- resolve-from-base-path [base-path name]
      (let [file (io/file base-path (str name ".mustache"))]
        (when (.exists file)
-         (read/make-file-reader file)))))
+         (reader/make-file-reader file)))))
 
 #?(:clj
    (defn- ensure-derefed [x]
