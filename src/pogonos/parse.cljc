@@ -1,7 +1,7 @@
 (ns pogonos.parse
   (:refer-clojure :exclude [read-line])
   (:require [clojure.string :as str]
-            [pogonos.error :refer [error]]
+            [pogonos.error :as error :refer [error]]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.reader :as reader]
@@ -254,9 +254,10 @@
 
 (defn parse
   ([in out] (parse in out {}))
-  ([in out {:keys [open-delim close-delim indent]}]
+  ([in out {:keys [source open-delim close-delim indent]}]
    (binding [*open-delim* (or open-delim default-open-delim)
-             *close-delim* (or close-delim default-close-delim)]
+             *close-delim* (or close-delim default-close-delim)
+             error/*source* source]
      (let [parser (-> (make-parser in out)
                       (cond-> indent (assoc :indent indent))
                       (enable-indent-insertion))]

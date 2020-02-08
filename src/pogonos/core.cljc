@@ -5,7 +5,7 @@
             #?(:clj [pogonos.partials-resolver :as pres])
             [pogonos.reader :as reader]
             [pogonos.render :as render])
-  #?(:clj (:import [java.io Closeable])))
+  #?(:clj (:import [java.io Closeable File])))
 
 (defn parse [s]
   (let [in (reader/make-string-reader s)
@@ -31,7 +31,7 @@
   ([in data {:keys [output] :or {output (output/string-output)} :as opts}]
    (let [out #(output/append output %)
          ctx [data]]
-     (parse/parse in #(render/render ctx out % opts))
+     (parse/parse in #(render/render ctx out % opts) opts)
      (output/complete output))))
 
 (defn render-string
@@ -45,8 +45,11 @@
      ([file data]
       (render-file file data {}))
      ([file data opts]
-      (with-open [in ^Closeable (reader/make-file-reader file)]
-        (render-input in data opts)))))
+      (let [opts (cond-> opts
+                   (string? file) (assoc :source file)
+                   (instance? File file) (assoc :source (.getName ^File file)))]
+        (with-open [in ^Closeable (reader/make-file-reader file)]
+          (render-input in data opts))))))
 
 #?(:clj
    (defn set-default-partials-base-path! [base-path]

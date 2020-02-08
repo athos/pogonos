@@ -100,10 +100,12 @@
 
   #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
-    (when-let [r (pres/resolve *partials-resolver* (:name this))]
-      (try
-        (parse/parse r #(proto/render % ctx out) {:indent (:indent this)})
-        (finally
-          #?(:clj
-             (when (instance? java.io.Closeable r)
-               (.close ^java.io.Closeable r))))))))
+    (let [name (:name this)]
+      (when-let [r (pres/resolve *partials-resolver* name)]
+        (try
+          (parse/parse r #(proto/render % ctx out)
+                       {:source name :indent (:indent this)})
+          (finally
+            #?(:clj
+               (when (instance? java.io.Closeable r)
+                 (.close ^java.io.Closeable r)))))))))

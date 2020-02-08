@@ -1,6 +1,8 @@
 (ns pogonos.error
   (:require [clojure.string :as str]))
 
+(def ^:dynamic *source* nil)
+
 (defn error
   ([type msg line line-num col-num]
    (error type msg line line-num col-num {}))
@@ -9,7 +11,8 @@
          col-num (some-> col-num inc)
          msg' (str msg
                    (when (and line line-num col-num)
-                     (str " (" line-num \: col-num "):\n"
+                     (str " (" (when *source* (str *source* \:))
+                          line-num \: col-num "):\n"
                           "\n  " line-num "| " line "\n"
                           "    "
                           (->> (repeat (+ (count (str line-num))
@@ -18,6 +21,7 @@
                                (apply str))
                           "^^")))]
      (->> (cond-> (assoc data :type type)
+            *source* (assoc :source *source*)
             line-num (assoc :line line-num)
             col-num (assoc :column col-num))
           (ex-info msg')
