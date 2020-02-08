@@ -246,10 +246,11 @@
           (do (emit parser line)
               (recur))
           (when (:section parser)
-            (error :missing-section-end
-                   (str "Missing section-end tag " *open-delim* "/"
-                        (stringify-keys (:section parser)) *close-delim*)
-                   prev-line prev-line-num (count prev-line))))))))
+            (let [line (strip-newline prev-line)]
+              (error :missing-section-end
+                     (str "Missing section-end tag " *open-delim* "/"
+                          (stringify-keys (:section parser)) *close-delim*)
+                     line prev-line-num (count line)))))))))
 
 (defn parse
   ([in out] (parse in out {}))
