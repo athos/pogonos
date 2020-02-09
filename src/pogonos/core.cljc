@@ -1,5 +1,6 @@
 (ns pogonos.core
-  (:require [pogonos.nodes :as nodes]
+  (:require [pogonos.error :as error]
+            [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.parse :as parse]
             #?(:clj [pogonos.partials-resolver :as pres])
@@ -54,3 +55,11 @@
 #?(:clj
    (defn set-default-partials-base-path! [base-path]
      (pres/set-default-partials-base-path! base-path)))
+
+(defn perr
+  ([]
+   (perr *e))
+  ([err]
+   (let [data (ex-data err)]
+     (error/print-error (:message data) data)
+     (newline))))
