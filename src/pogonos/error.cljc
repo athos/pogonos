@@ -1,28 +1,46 @@
-(ns pogonos.error
-  (:require [clojure.string :as str]))
+(ns pogonos.error)
 
 (def ^:dynamic *source* nil)
+
+(defn- has-detailed-error-info? [{:keys [error-line line column]}]
+  (and error-line line column))
+
+(defn- print-error-message [msg {:keys [line column] :as ex-data}]
+  (print msg)
+  (when (has-detailed-error-info? ex-data)
+    (print " (")
+    (when *source*
+      (print *source*)
+      (print \:))
+    (print line)
+    (print \:)
+    (print column)
+    (println "):")))
+
+(defn- print-detailed-error-info [{:keys [error-line line column] :as ex-data}]
+  (when (has-detailed-error-info? ex-data)
+    (print "\n  ")
+    (print line)
+    (print "| ")
+    (println error-line)
+    (print "    ")
+    (dotimes [_ (+ (count (str line)) (dec column))]
+      (print \space))
+    (print "^^")))
+
+(defn print-error [msg ex-data]
+  (print-error-message msg ex-data)
+  (print-detailed-error-info ex-data))
 
 (defn error
   ([type msg line line-num col-num]
    (error type msg line line-num col-num {}))
   ([type msg line line-num col-num data]
-   (let [line-num (some-> line-num inc)
-         col-num (some-> col-num inc)
-         msg' (str msg
-                   (when (and line line-num col-num)
-                     (str " (" (when *source* (str *source* \:))
-                          line-num \: col-num "):\n"
-                          "\n  " line-num "| " line "\n"
-                          "    "
-                          (->> (repeat (+ (count (str line-num))
-                                          (dec col-num))
-                                       \space)
-                               (apply str))
-                          "^^")))]
-     (->> (cond-> (assoc data :type type)
-            *source* (assoc :source *source*)
-            line-num (assoc :line line-num)
-            col-num (assoc :column col-num))
-          (ex-info msg')
-          (throw)))))
+   (let [ex-data (cond-> (assoc data :type type :message msg)
+                   *source* (assoc :source *source*)
+                   line (assoc :error-line line)
+                   line-num (assoc :line (some-> line-num inc))
+                   col-num (assoc :column (some-> col-num inc)))
+         msg' (with-out-str
+                (print-error msg ex-data))]
+     (throw (ex-info msg' ex-data)))))
