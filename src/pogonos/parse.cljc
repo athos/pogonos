@@ -251,7 +251,7 @@
           (do (emit parser line)
               (recur))
           (when (:section parser)
-            (let [line (strip-newline prev-line)]
+            (let [line (some-> prev-line strip-newline)]
               (error :missing-section-end
                      (str "Missing section-end tag " *open-delim* "/"
                           (stringify-keys (:section parser)) *close-delim*)
