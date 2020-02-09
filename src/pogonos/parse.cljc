@@ -57,9 +57,18 @@
                   (out indent)))
               out))))
 
-(defn- parse-keys [s]
-  (->> (str/split s #"\.")
-       (mapv keyword)))
+(defn- parse-keys
+  ([parser s]
+   (parse-keys parser s *close-delim*))
+  ([parser s close-delim]
+   (let [name (pstr/trim s)]
+     (if (and (seq name) (not (pstr/index-of name " " 0)))
+       (->> (str/split name #"\.")
+            (mapv keyword))
+       (error :invalid-variable
+              (str "Invalid variable \"" name "\"")
+              (current-line parser) (line-num parser)
+              (- (col-num parser) (count (str/triml s)) (count close-delim)))))))
 
 (defn- stringify-keys [keys]
   (let [out (output/string-output)]
@@ -85,13 +94,15 @@
 
 (defn- parse-variable [parser pre unescaped?]
   (emit parser pre)
-  (let [name (extract-tag-content parser)]
-    (emit parser (nodes/->Variable (parse-keys (pstr/trim name)) unescaped?))))
+  (let [name (extract-tag-content parser)
+        keys (parse-keys parser name)]
+    (emit parser (nodes/->Variable keys unescaped?))))
 
 (defn- parse-unescaped-variable [parser pre]
   (emit parser pre)
-  (let [name (extract-tag-content parser "}}}")]
-    (emit parser (nodes/->UnescapedVariable (parse-keys (pstr/trim name))))))
+  (let [name (extract-tag-content parser "}}}")
+        keys (parse-keys parser name "}}}")]
+    (emit parser (nodes/->UnescapedVariable keys))))
 
 (defn- standalone? [{:keys [in]} pre start]
   (and (= start (count pre))
@@ -110,7 +121,7 @@
 
 (defn- parse-section-start [parser pre start inverted?]
   (let [name (extract-tag-content parser)
-        keys (parse-keys (pstr/trim name))
+        keys (parse-keys parser name)
         children (volatile! [])
         ;; Delimiters may be changed before SectionEnd arrives.
         ;; So we need to bind them lexically here to remember
@@ -139,7 +150,7 @@
 
 (defn- parse-section-end [parser pre start]
   (let [name (extract-tag-content parser)
-        keys (parse-keys (pstr/trim name))]
+        keys (parse-keys parser name)]
     (if (= keys (:section parser))
       (with-surrounding-whitespaces-processed parser pre start
         (fn [pre post]
