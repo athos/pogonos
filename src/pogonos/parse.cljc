@@ -259,10 +259,13 @@
 
 (defn parse
   ([in out] (parse in out {}))
-  ([in out {:keys [source open-delim close-delim indent]}]
+  ([in out
+    {:keys [source show-detailed-error open-delim close-delim indent]
+     :or {show-detailed-error true}}]
    (binding [*open-delim* (or open-delim default-open-delim)
              *close-delim* (or close-delim default-close-delim)
-             error/*source* source]
+             error/*source* source
+             error/*show-detailed-error* show-detailed-error]
      (let [parser (-> (make-parser in out)
                       (cond-> indent (assoc :indent indent))
                       (enable-indent-insertion))]

@@ -8,14 +8,17 @@
             [pogonos.render :as render])
   #?(:clj (:import [java.io Closeable File])))
 
-(defn parse [s]
-  (let [in (reader/make-string-reader s)
-        buf (volatile! [])
-        out (fn [x]
-              (when-not (satisfies? nodes/Invisible x)
-                (vswap! buf conj x)))]
-    (parse/parse in out)
-    (nodes/->Root @buf)))
+(defn parse
+  ([s]
+   (parse {}))
+  ([s opts]
+   (let [in (reader/make-string-reader s)
+         buf (volatile! [])
+         out (fn [x]
+               (when-not (satisfies? nodes/Invisible x)
+                 (vswap! buf conj x)))]
+     (parse/parse in out opts)
+     (nodes/->Root @buf))))
 
 (defn render
   ([template data]
@@ -61,5 +64,6 @@
    (perr *e))
   ([err]
    (let [data (ex-data err)]
-     (error/print-error (:message data) data)
+     (binding [error/*show-detailed-error* true]
+       (error/print-error (:message data) data))
      (newline))))
