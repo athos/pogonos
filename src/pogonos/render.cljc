@@ -28,30 +28,34 @@
         (get-in x keys)))
     (first ctx)))
 
+(defn render* [ctx out x]
+  (if (string? x)
+    (out x)
+    (proto/render x ctx out)))
+
 (defn- render-variable [ctx out var unescaped?]
   (let [val (lookup ctx (:keys var))
         escape-fn (if unescaped? identity escape)]
     (if (fn? val)
       (parse/parse (reader/make-string-reader (str (val)))
-                   #(proto/render % ctx (comp out escape-fn)))
+                   #(render* ctx (comp out escape-fn) %))
       (out (escape-fn (str val))))))
 
-(defn render [ctx out x {:keys [partials]}]
-  (binding [*partials-resolver* (or partials *partials-resolver*)]
-    (proto/render x ctx out)))
+(defn render
+  ([ctx out x]
+   (render ctx out x {}))
+  ([ctx out x {:keys [partials]}]
+   (binding [*partials-resolver* (or partials *partials-resolver*)]
+     (render* ctx out x))))
 
 (extend-protocol proto/IRenderable
   #?(:clj Object :cljs object)
   (render [this ctx out])
 
-  #?(:clj String :cljs string)
-  (render [this ctx out]
-    (out this))
-
   #?(:clj Root :cljs nodes/Root)
   (render [this ctx out]
     (doseq [node (:body this)]
-      (proto/render node ctx out)))
+      (render* ctx out node)))
 
   #?(:clj Variable :cljs nodes/Variable)
   (render [this ctx out]
@@ -68,12 +72,12 @@
 
             (map? val)
             (doseq [node (:nodes this)]
-              (proto/render node (cons val ctx) out))
+              (render* (cons val ctx) out node))
 
             (and (coll? val) (sequential? val))
             (when (seq val)
               (doseq [e val, node (:nodes this)]
-                (proto/render node (cons e ctx) out)))
+                (render* (cons e ctx) out node)))
 
             (fn? val)
             (let [{:keys [open close]} (meta this)
@@ -83,12 +87,12 @@
                            (stringify/stringify open close)
                            val)]
               (parse/parse (reader/make-string-reader body)
-                           #(proto/render % ctx out)
+                           #(render* ctx out %)
                            {:open-delim open :close-delim close}))
 
             :else
             (doseq [node (:nodes this)]
-              (proto/render node (cons val ctx) out)))))
+              (render* (cons val ctx) out node)))))
 
   #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
@@ -96,14 +100,14 @@
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
         (doseq [node (:nodes this)]
-          (proto/render node ctx out)))))
+          (render* ctx out node)))))
 
   #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
     (let [name (:name this)]
       (when-let [r (pres/resolve *partials-resolver* name)]
         (try
-          (parse/parse r #(proto/render % ctx out)
+          (parse/parse r #(render* ctx out %)
                        {:source name :indent (:indent this)})
           (finally
             #?(:clj
