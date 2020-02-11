@@ -10,7 +10,7 @@
 
 (defn parse
   ([s]
-   (parse {}))
+   (parse s {}))
   ([s opts]
    (let [in (reader/make-string-reader s)
          buf (volatile! [])
