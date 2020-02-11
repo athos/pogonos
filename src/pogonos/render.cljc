@@ -22,11 +22,15 @@
 (defn lookup [ctx keys]
   (if (seq keys)
     (let [k (first keys)]
-      (when-let [x (->> ctx
-                        (filter #(and (map? %) (contains? % k)))
-                        first)]
-        (get-in x keys)))
-    (first ctx)))
+      (when-let [x (reduce (fn [_ i]
+                             (let [v (ctx i)]
+                               (when (and (map? v) (contains? v k))
+                                 (reduced v))))
+                           nil (range (dec (count ctx)) -1 -1))]
+        (if (next keys)
+          (get-in x keys)
+          (k x))))
+    (peek ctx)))
 
 (defn render* [ctx out x]
   (if (string? x)
@@ -72,12 +76,12 @@
 
             (map? val)
             (doseq [node (:nodes this)]
-              (render* (cons val ctx) out node))
+              (render* (conj ctx val) out node))
 
             (and (coll? val) (sequential? val))
             (when (seq val)
               (doseq [e val, node (:nodes this)]
-                (render* (cons e ctx) out node)))
+                (render* (conj ctx e) out node)))
 
             (fn? val)
             (let [{:keys [open close]} (meta this)
@@ -92,7 +96,7 @@
 
             :else
             (doseq [node (:nodes this)]
-              (render* (cons val ctx) out node)))))
+              (render* (conj ctx val) out node)))))
 
   #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
