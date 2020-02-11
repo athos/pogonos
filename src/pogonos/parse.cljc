@@ -119,10 +119,23 @@
 
 (declare parse*)
 
+(defn make-node-buffer []
+  (let [s (volatile! nil)
+        nodes (volatile! [])]
+    (fn
+      ([] (cond-> @nodes @s (conj @s)))
+      ([x]
+       (if (string? x)
+         (vswap! s str x)
+         (do (when @s
+               (vswap! nodes conj @s)
+               (vreset! s nil))
+             (vswap! nodes conj x)))))))
+
 (defn- parse-section-start [parser pre start inverted?]
   (let [name (extract-tag-content parser)
         keys (parse-keys parser name)
-        children (volatile! [])
+        children (make-node-buffer)
         ;; Delimiters may be changed before SectionEnd arrives.
         ;; So we need to bind them lexically here to remember
         ;; what delimiters were actually used for this section-start tag
@@ -132,10 +145,10 @@
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (letfn [(out' [x]
-                  (vswap! children conj x)
+                  (children x)
                   (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
                     (-> ((if inverted? nodes/->Inverted nodes/->Section)
-                         keys @children)
+                         keys (children))
                         (cond->
                             (or (not= open default-open-delim)
                                 (not= close default-close-delim))

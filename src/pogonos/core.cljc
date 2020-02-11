@@ -13,12 +13,12 @@
    (parse s {}))
   ([s opts]
    (let [in (reader/make-string-reader s)
-         buf (volatile! [])
+         buf (parse/make-node-buffer)
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
-                 (vswap! buf conj x)))]
+                 (buf x)))]
      (parse/parse in out opts)
-     (nodes/->Root @buf))))
+     (nodes/->Root (buf)))))
 
 (defn render
   ([template data]
