@@ -61,14 +61,14 @@
   ([parser s]
    (parse-keys parser s *close-delim*))
   ([parser s close-delim]
-   (let [name (pstr/trim s)]
-     (if (and (seq name) (not (pstr/index-of name " " 0)))
-       (->> (str/split name #"\.")
-            (mapv keyword))
+   (let [name (pstr/trim s)
+         keys (str/split name #"\.")]
+     (if (some (fn [k] (or (str/blank? k) (pstr/index-of k " " 0))) keys)
        (error :invalid-variable
               (str "Invalid variable \"" name "\"")
               (current-line parser) (line-num parser)
-              (- (col-num parser) (count (str/triml s)) (count close-delim)))))))
+              (- (col-num parser) (count (str/triml s)) (count close-delim)))
+       (mapv keyword keys)))))
 
 (defn- stringify-keys [keys]
   (let [out (output/string-output)]
