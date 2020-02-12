@@ -120,16 +120,18 @@
 (declare parse*)
 
 (defn make-node-buffer []
-  (let [s (volatile! nil)
+  (let [acc (volatile! nil)
         nodes (volatile! [])]
     (fn
-      ([] (cond-> @nodes @s (conj @s)))
+      ([] (cond-> @nodes @acc (conj (@acc))))
       ([x]
        (if (string? x)
-         (vswap! s str x)
-         (do (when @s
-               (vswap! nodes conj @s)
-               (vreset! s nil))
+         (do (when-not @acc
+               (vreset! acc (output/string-output)))
+             (@acc x))
+         (do (when @acc
+               (vswap! nodes conj (@acc))
+               (vreset! acc nil))
              (vswap! nodes conj x)))))))
 
 (defn- parse-section-start [parser pre start inverted?]
