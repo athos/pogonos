@@ -20,16 +20,17 @@
                  (str %))))
 
 (defn lookup [ctx keys]
-  (if (seq keys)
-    (let [k (first keys)]
-      (when-let [x (reduce (fn [_ i]
-                             (let [v (ctx i)]
-                               (when (and (map? v) (contains? v k))
-                                 (reduced v))))
-                           nil (range (dec (count ctx)) -1 -1))]
-        (if (next keys)
-          (get-in x keys)
-          (k x))))
+  (if-let [k (peek keys)]
+    (when-let [v (loop [ctx ctx]
+                   (when-let [v (peek ctx)]
+                     (if (and (map? v)
+                              (not #?(:clj (identical? (v k ::none) ::none)
+                                      :cljs (keyword-identical? (v k ::none) ::none))))
+                       v
+                       (recur (next ctx)))))]
+      (if (next keys)
+        (get-in v keys)
+        (v k)))
     (peek ctx)))
 
 (defn render* [ctx out x]

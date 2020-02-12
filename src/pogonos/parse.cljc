@@ -68,7 +68,7 @@
               (str "Invalid variable \"" name "\"")
               (current-line parser) (line-num parser)
               (- (col-num parser) (count (str/triml s)) (count close-delim)))
-       (mapv keyword keys)))))
+       (apply list (map keyword keys))))))
 
 (defn- stringify-keys [keys]
   (let [out (output/string-output)]

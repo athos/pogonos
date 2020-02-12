@@ -25,14 +25,14 @@
    (render template data {}))
   ([template data
     {:keys [output] :or {output (output/string-output)} :as opts}]
-   (render/render [data] output template opts)
+   (render/render (list data) output template opts)
    (output)))
 
 (defn render-input
   ([in data]
    (render-input in data {}))
   ([in data {:keys [output] :or {output (output/string-output)} :as opts}]
-   (let [ctx [data]]
+   (let [ctx (list data)]
      (parse/parse in #(render/render ctx output % opts) opts)
      (output))))
 
