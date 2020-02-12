@@ -4,10 +4,6 @@
 (defprotocol IReader
   (read-line [this]))
 
-(defprotocol IOutput
-  (append [this x])
-  (complete [this]))
-
 (defprotocol IRenderable
   (render [this ctx out]))
 

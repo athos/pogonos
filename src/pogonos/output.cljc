@@ -1,62 +1,40 @@
 (ns pogonos.output
   (:require [clojure.string :as str]
-            #?(:clj [clojure.java.io :as io])
-            [pogonos.protocols :as proto]))
-
-(def ^{:arglists '([output s])} append proto/append)
-(def ^{:arglists '([output])} complete proto/complete)
-
-(defrecord StandardOutput []
-  proto/IOutput
-  (append [this s]
-    (print s)
-    (when (str/ends-with? s "\n")
-      (flush)))
-  (complete [this]
-    (flush)))
+            #?(:clj [clojure.java.io :as io])))
 
 (defn standard-output []
-  (->StandardOutput))
-
-#?(:clj
-   (defrecord StringOutput [^StringBuilder sb]
-     proto/IOutput
-     (append [this s]
-       (.append sb s))
-     (complete [this]
-       (.toString sb)))
-   :cljs
-   (defrecord StringOutput [strs]
-     proto/IOutput
-     (append [this s]
-       (vswap! strs conj s))
-     (complete [this]
-       (apply str @strs))))
+  (fn
+    ([] (flush))
+    ([x]
+     (print x)
+     (when (str/ends-with? x "\n")
+       (flush)))))
 
 (defn string-output []
-  #?(:clj (->StringOutput (StringBuilder.))
-     :cljs (->StringOutput (volatile! []))))
-
-#?(:clj
-   (defrecord FileOutput [^java.io.Writer writer]
-     proto/IOutput
-     (append [this s]
-       (.write writer ^String s))
-     (complete [this]
-       (.close writer))))
+  #?(:clj
+     (let [sb (StringBuilder.)]
+       (fn
+         ([] (.toString sb))
+         ([x] (.append sb x))))
+     :cljs
+     (let [strs (volatile! [])]
+       (fn
+         ([] (apply str @strs))
+         ([x]
+          (vswap! strs conj x))))))
 
 #?(:clj
    (defn file-output [file]
-     (->FileOutput (io/writer file))))
-
-#?(:clj
-   (defrecord WriterOutput [^java.io.Writer writer]
-     proto/IOutput
-     (append [this s]
-       (.write writer ^String s))
-     (complete [this]
-       (.flush writer))))
+     (let [w (io/writer file)]
+       (fn
+         ([] (.close w))
+         ([^String x]
+          (.write w x))))))
 
 #?(:clj
    (defn writer-output [w]
-     (->WriterOutput (io/writer w))))
+     (let [w (io/writer w)]
+       (fn
+         ([] (.flush w))
+         ([^String x]
+          (.write w x))))))

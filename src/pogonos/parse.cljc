@@ -72,8 +72,8 @@
 
 (defn- stringify-keys [keys]
   (let [out (output/string-output)]
-    (stringify/stringify-keys keys #(output/append out %))
-    (output/complete out)))
+    (stringify/stringify-keys keys out)
+    (out)))
 
 (defn- extract-tag-content
   ([parser] (extract-tag-content parser *close-delim*))
