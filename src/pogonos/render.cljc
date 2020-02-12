@@ -39,12 +39,12 @@
     (proto/render x ctx out)))
 
 (defn- render-variable [ctx out var unescaped?]
-  (let [val (lookup ctx (:keys var))
-        escape-fn (if unescaped? identity escape)]
-    (if (fn? val)
-      (parse/parse (reader/make-string-reader (str (val)))
-                   #(render* ctx (comp out escape-fn) %))
-      (out (escape-fn (str val))))))
+  (when-some [val (lookup ctx (:keys var))]
+    (let [escape-fn (if unescaped? identity escape)]
+      (if (fn? val)
+        (parse/parse (reader/make-string-reader (str (val)))
+                     #(render* ctx (comp out escape-fn) %))
+        (out (escape-fn (str val)))))))
 
 (defn render
   ([ctx out x]
