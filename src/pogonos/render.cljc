@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [pogonos.partials-resolver :as pres]
             [pogonos.nodes :as nodes]
+            #?(:cljs [pogonos.output :as output])
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader]
@@ -13,11 +14,37 @@
 (def ^:dynamic *partials-resolver*
   #?(:clj (pres/file-partials-resolver)))
 
-(defn escape [s]
-  (str/replace s #"[&<>\"']"
-               #({"&" "&amp;", "<" "&lt;", ">" "&gt;"
-                  "\"" "&quot;", "'" "&#39;"}
-                 (str %))))
+(defn escape [^String s]
+  #?(:clj
+     (let [len (.length s)
+           sb (StringBuilder.)]
+       (loop [i 0]
+         (when (< i len)
+           (let [c (char (.charAt s i))]
+             (case c
+               \& (.append sb "&amp;")
+               \< (.append sb "&lt;")
+               \> (.append sb "&gt;")
+               \" (.append sb "&quot;")
+               \' (.append sb "&#39;")
+               (.append sb c)))
+           (recur (inc i))))
+       (.toString sb))
+     :cljs
+     (let [len (.-length s)
+           out (output/string-output)]
+       (loop [i 0]
+         (when (< i len)
+           (let [c (char (.charAt s i))]
+             (case c
+               \& (out "&amp;")
+               \< (out "&lt;")
+               \> (out "&gt;")
+               \" (out "&quot;")
+               \' (out "&#39;")
+               (out c)))
+           (recur (inc i))))
+       (out))))
 
 (defn lookup [ctx keys]
   (if-let [k (peek keys)]
