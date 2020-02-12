@@ -1,8 +1,8 @@
 (ns pogonos.render
   (:require [clojure.string :as str]
+            #?(:cljs [goog.string :as gstr])
             [pogonos.partials-resolver :as pres]
             [pogonos.nodes :as nodes]
-            #?(:cljs [pogonos.output :as output])
             [pogonos.parse :as parse]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader]
@@ -30,21 +30,7 @@
                (.append sb c)))
            (recur (inc i))))
        (.toString sb))
-     :cljs
-     (let [len (.-length s)
-           out (output/string-output)]
-       (loop [i 0]
-         (when (< i len)
-           (let [c (char (.charAt s i))]
-             (case c
-               \& (out "&amp;")
-               \< (out "&lt;")
-               \> (out "&gt;")
-               \" (out "&quot;")
-               \' (out "&#39;")
-               (out c)))
-           (recur (inc i))))
-       (out))))
+     :cljs (gstr/htmlEscape s)))
 
 (defn lookup [ctx keys]
   (if-let [k (peek keys)]
