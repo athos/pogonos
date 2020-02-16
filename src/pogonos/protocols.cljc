@@ -5,6 +5,9 @@
   (read-line [this])
   (close [this]))
 
+(defprotocol ToReader
+  (->reader [this]))
+
 (defprotocol IRenderable
   (render [this ctx out]))
 
