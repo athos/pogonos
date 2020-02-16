@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [read-line resolve]))
 
 (defprotocol IReader
-  (read-line [this]))
+  (read-line [this])
+  (close [this]))
 
 (defprotocol IRenderable
   (render [this ctx out]))

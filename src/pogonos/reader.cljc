@@ -6,6 +6,8 @@
             [pogonos.strings :as pstr])
   #?(:clj (:import [java.io Reader Closeable])))
 
+(defn close [reader] (proto/close reader))
+
 (deftype StringReader [src ^:unsynchronized-mutable offset]
   proto/IReader
   (read-line [this]
@@ -14,7 +16,8 @@
             offset' (or (some-> i inc) (count src))
             ret (subs src offset offset')]
         (set! offset offset')
-        ret))))
+        ret)))
+  (close [this]))
 
 (defn make-string-reader [s]
   (StringReader. s 0))
@@ -85,7 +88,9 @@
   (base-reader [this] in)
   proto/IReader
   (read-line [this]
-    (read-line this)))
+    (read-line this))
+  (close [this]
+    (proto/close in)))
 
 (defn make-line-buffering-reader [in]
   (->LineBufferingReader in nil 0 0))

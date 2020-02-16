@@ -49,9 +49,12 @@
      ([file data opts]
       (let [opts (cond-> opts
                    (string? file) (assoc :source file)
-                   (instance? File file) (assoc :source (.getName ^File file)))]
-        (with-open [in ^Closeable (reader/make-file-reader file)]
-          (render-input in data opts))))))
+                   (instance? File file) (assoc :source (.getName ^File file)))
+            in (reader/make-file-reader file)]
+        (try
+          (render-input in data opts)
+          (finally
+            (reader/close in)))))))
 
 #?(:clj
    (defn set-default-partials-base-path! [base-path]

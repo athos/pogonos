@@ -128,6 +128,4 @@
           (parse/parse r #(render* ctx out %)
                        {:source name :indent (:indent this)})
           (finally
-            #?(:clj
-               (when (instance? java.io.Closeable r)
-                 (.close ^java.io.Closeable r)))))))))
+            (reader/close r)))))))
