@@ -1,5 +1,6 @@
 (ns pogonos.core
-  (:require [pogonos.error :as error]
+  (:require #?(:clj [clojure.java.io :as io])
+            [pogonos.error :as error]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.parse :as parse]
@@ -47,9 +48,10 @@
      ([file data]
       (render-file file data {}))
      ([file data opts]
-      (let [opts (cond-> opts
-                   (string? file) (assoc :source file)
-                   (instance? File file) (assoc :source (.getName ^File file)))
+      (let [opts (assoc opts :source
+                        (if (string? file)
+                          file
+                          (.getName (io/as-file file))))
             in (reader/make-file-reader file)]
         (try
           (render-input in data opts)
