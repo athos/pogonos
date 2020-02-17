@@ -9,17 +9,33 @@
             [pogonos.render :as render])
   #?(:clj (:import [java.io Closeable File])))
 
-(defn parse
-  ([s]
-   (parse s {}))
-  ([s opts]
-   (let [in (reader/make-string-reader s)
-         buf (parse/make-node-buffer)
+(defn parse-input
+  ([in]
+   (parse-input in {}))
+  ([in opts]
+   (let [buf (parse/make-node-buffer)
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
                  (buf x)))]
      (parse/parse in out opts)
      (nodes/->Root (buf)))))
+
+(defn parse-string
+  ([s]
+   (parse-string s {}))
+  ([s opts]
+   (parse-input (reader/make-string-reader s) opts)))
+
+#?(:clj
+   (defn parse-file
+     ([file]
+      (parse-file file {}))
+     ([file opts]
+      (let [in (reader/make-file-reader file)]
+        (try
+          (parse-input in opts)
+          (finally
+            (reader/close in)))))))
 
 (defn render
   ([template data]

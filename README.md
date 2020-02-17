@@ -19,7 +19,7 @@ Add the following to your `:dependencies`:
 ;; Loads a Mustache template from a file
 (pg/render-file "sample.mustache" {:name "Rich"})
 
-(def template (pg/parse "Hello, {{name}}!"))
+(def template (pg/parse-string "Hello, {{name}}!"))
 (pg/render template {:name "Rich"})
 ;=> "Hello, Rich!"
 (pg/render template {:name "Alex"})
