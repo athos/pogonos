@@ -7,7 +7,7 @@
             #?(:clj [pogonos.partials-resolver :as pres])
             [pogonos.reader :as reader]
             [pogonos.render :as render])
-  #?(:clj (:import [java.io Closeable File])))
+  #?(:clj (:import [java.io Closeable File FileNotFoundException])))
 
 (defn parse-input
   ([in]
@@ -36,6 +36,15 @@
           (parse-input in opts)
           (finally
             (reader/close in)))))))
+
+#?(:clj
+   (defn parse-resource
+     ([res]
+      (parse-resource res {}))
+     ([res opts]
+      (if-let [res (io/resource res)]
+        (parse-file res opts)
+        (throw (FileNotFoundException. res))))))
 
 (defn render
   ([template data]
@@ -73,6 +82,15 @@
           (render-input in data opts)
           (finally
             (reader/close in)))))))
+
+#?(:clj
+   (defn render-resource
+     ([res data]
+      (render-resource res data {}))
+     ([res data opts]
+      (if-let [res (io/resource res)]
+        (render-file res data opts)
+        (throw (FileNotFoundException. res))))))
 
 #?(:clj
    (defn set-default-partials-base-path! [base-path]
