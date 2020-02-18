@@ -5,41 +5,49 @@
             [pogonos.reader :as reader]))
 
 #?(:clj
-   (defn- resolve-from-base-path [base-path name]
+   (defn- resolve-resource-from-base-path [base-path name]
+     (when-let [res (->> name
+                         (format "%s%s%s.mustache" base-path
+                                 (System/getProperty "file.separator"))
+                         io/resource)]
+       (reader/make-file-reader res))))
+
+#?(:clj
+   (defrecord ResourcePartialsResolver [base-paths]
+     proto/IPartialsResolver
+     (resolve [this name]
+       (some #(resolve-resource-from-base-path % name) base-paths))))
+
+#?(:clj
+   (defn resource-partials-resolver
+     ([] (resource-partials-resolver "."))
+     ([base-path & base-paths]
+      (->ResourcePartialsResolver (cons base-path base-paths)))))
+
+#?(:clj
+   (defn- resolve-file-from-base-path [base-path name]
      (let [file (io/file base-path (str name ".mustache"))]
        (when (.exists file)
          (reader/make-file-reader file)))))
 
 #?(:clj
-   (defn- ensure-derefed [x]
-     (if (instance? clojure.lang.IDeref x) (deref x) x)))
-
-#?(:clj
    (defrecord FilePartialsResolver [base-paths]
      proto/IPartialsResolver
      (resolve [this name]
-       (some #(resolve-from-base-path (ensure-derefed %) name) base-paths))))
-
-#?(:clj
-   (def ^:private default-partials-base-path (atom ".")))
+       (some #(resolve-file-from-base-path % name)
+             base-paths))))
 
 #?(:clj
    (defn file-partials-resolver
-     ([]
-      (file-partials-resolver @default-partials-base-path))
+     ([] (file-partials-resolver "."))
      ([base-path & base-paths]
       (->FilePartialsResolver (cons base-path base-paths)))))
-
-#?(:clj
-   (defn set-default-partials-base-path! [base-path]
-     (reset! default-partials-base-path base-path)
-     nil))
 
 #?(:clj
    (extend-type String
      proto/IPartialsResolver
      (resolve [this name]
-       (resolve-from-base-path this name))))
+       (resolve-resource-from-base-path this name))))
 
 (extend-protocol proto/IPartialsResolver
   #?(:clj clojure.lang.APersistentMap

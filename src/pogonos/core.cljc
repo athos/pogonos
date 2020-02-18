@@ -12,11 +12,13 @@
 (defn parse-input
   ([in]
    (parse-input in {}))
-  ([in opts]
+  ([in {:keys [partials] :as opts}]
    (let [buf (parse/make-node-buffer)
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
-                 (buf x)))]
+                 (buf x)))
+         opts (assoc opts :partials
+                     (or partials #?(:clj (pres/resource-partials-resolver))))]
      (parse/parse in out opts)
      (nodes/->Root (buf)))))
 
@@ -60,8 +62,11 @@
 (defn render-input
   ([in data]
    (render-input in data {}))
-  ([in data {:keys [output] :or {output (output/string-output)} :as opts}]
-   (let [ctx (list data)]
+  ([in data
+    {:keys [partials output] :or {output (output/string-output)} :as opts}]
+   (let [ctx (list data)
+         opts (assoc opts :partials
+                     (or partials #?(:clj (pres/resource-partials-resolver))))]
      (parse/parse in #(render/render ctx output % opts) opts)
      (output))))
 
@@ -75,10 +80,12 @@
    (defn render-file
      ([file data]
       (render-file file data {}))
-     ([file data opts]
+     ([file data {:keys [partials] :as opts}]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [opts (assoc opts :source (.getName f))
+          (let [opts (assoc opts
+                            :source (.getName f)
+                            :partials (or partials (pres/file-partials-resolver)))
                 in (reader/make-file-reader f)]
             (try
               (render-input in data opts)
