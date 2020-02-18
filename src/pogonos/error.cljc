@@ -1,14 +1,14 @@
 (ns pogonos.error)
 
-(def ^:dynamic *show-detailed-error* true)
+(def ^:dynamic *show-error-details* true)
 (def ^:dynamic *source* nil)
 
-(defn- has-detailed-error-info? [{:keys [error-line line column]}]
+(defn- has-error-details? [{:keys [error-line line column]}]
   (and error-line line column))
 
 (defn- print-error-message [msg {:keys [line column] :as ex-data}]
   (print msg)
-  (when (has-detailed-error-info? ex-data)
+  (when (has-error-details? ex-data)
     (print " (")
     (when *source*
       (print *source*)
@@ -17,11 +17,11 @@
     (print \:)
     (print column)
     (print \))
-    (when *show-detailed-error*
+    (when *show-error-details*
       (println \:))))
 
 (defn- print-detailed-error-info [{:keys [error-line line column] :as ex-data}]
-  (when (and *show-detailed-error* (has-detailed-error-info? ex-data))
+  (when (and *show-error-details* (has-error-details? ex-data))
     (print "\n  ")
     (print line)
     (print "| ")

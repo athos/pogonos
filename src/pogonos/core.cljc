@@ -129,6 +129,6 @@
    (perr *e))
   ([err]
    (let [data (ex-data err)]
-     (binding [error/*show-detailed-error* true]
+     (binding [error/*show-error-details* true]
        (error/print-error (:message data) data))
      (newline))))
