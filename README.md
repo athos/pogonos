@@ -28,7 +28,7 @@ Add the following to your `:dependencies`:
 (require '[pogonos.output :as output])
 ;; Prints the rendered result to stdout
 (pg/render-string "Hello, {{name}}" {:name "Rich"}
-                  {:output (output/standard-output)})
+                  {:output (output/stdout-output)})
 
 ;; Outputs the rendered result to a file
 (pg/render-string "Hello, {{name}}" {:name "Rich"}

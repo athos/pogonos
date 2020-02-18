@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             #?(:clj [clojure.java.io :as io])))
 
-(defn standard-output []
+(defn stdout-output []
   (fn
     ([] (flush))
     ([x]
