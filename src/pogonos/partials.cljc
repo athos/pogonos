@@ -1,4 +1,4 @@
-(ns pogonos.partials-resolver
+(ns pogonos.partials
   (:refer-clojure :exclude [resolve])
   (:require #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]

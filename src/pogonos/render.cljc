@@ -1,9 +1,9 @@
 (ns pogonos.render
   (:require [clojure.string :as str]
             #?(:cljs [goog.string :as gstr])
-            [pogonos.partials-resolver :as pres]
             [pogonos.nodes :as nodes]
             [pogonos.parse :as parse]
+            [pogonos.partials :as partials]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader]
             [pogonos.stringify :as stringify])
@@ -122,7 +122,7 @@
   #?(:clj Partial :cljs nodes/Partial)
   (render [this ctx out]
     (let [name (:name this)]
-      (when-let [r (pres/resolve *partials-resolver* name)]
+      (when-let [r (partials/resolve *partials-resolver* name)]
         (try
           (parse/parse r #(render* ctx out %)
                        {:source name :indent (:indent this)})

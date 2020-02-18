@@ -4,7 +4,7 @@
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.parse :as parse]
-            #?(:clj [pogonos.partials-resolver :as pres])
+            #?(:clj [pogonos.partials :as partials])
             [pogonos.reader :as reader]
             [pogonos.render :as render])
   #?(:clj (:import [java.io Closeable File FileNotFoundException])))
@@ -36,7 +36,7 @@
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
                  (buf x)))
-         opts (fixup-options opts #?(:clj pres/resource-partials-resolver))]
+         opts (fixup-options opts #?(:clj partials/resource-partials-resolver))]
      (parse/parse in out opts)
      (nodes/->Root (buf)))))
 
@@ -53,7 +53,7 @@
      ([file opts]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [opts (fixup-options opts pres/file-partials-resolver)
+          (let [opts (fixup-options opts partials/file-partials-resolver)
                 in (reader/make-file-reader f)]
             (try
               (parse-input in opts)
@@ -67,7 +67,7 @@
       (parse-resource res {}))
      ([res opts]
       (if-let [res (io/resource res)]
-        (let [opts (fixup-options opts pres/resource-partials-resolver)]
+        (let [opts (fixup-options opts partials/resource-partials-resolver)]
           (parse-file res opts))
         (throw (FileNotFoundException. res))))))
 
@@ -86,7 +86,7 @@
   ([in data opts]
    (let [ctx (list data)
          {:keys [output]
-          :as opts} (fixup-options opts #?(:clj pres/resource-partials-resolver))
+          :as opts} (fixup-options opts #?(:clj partials/resource-partials-resolver))
          out (output)]
      (parse/parse in #(render/render ctx out % opts) opts)
      (out))))
@@ -105,7 +105,7 @@
       (let [f (io/as-file file)]
         (if (.exists f)
           (let [opts (-> opts
-                         (fixup-options pres/file-partials-resolver)
+                         (fixup-options partials/file-partials-resolver)
                          (assoc :source (.getName f)))
                 in (reader/make-file-reader f)]
             (try
@@ -120,7 +120,7 @@
       (render-resource res data {}))
      ([res data opts]
       (if-let [res (io/resource res)]
-        (let [opts (fixup-options opts pres/resource-partials-resolver)]
+        (let [opts (fixup-options opts partials/resource-partials-resolver)]
           (render-file res data opts))
         (throw (FileNotFoundException. res))))))
 
