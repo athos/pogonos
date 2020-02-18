@@ -28,11 +28,11 @@ Add the following to your `:dependencies`:
 (require '[pogonos.output :as output])
 ;; Prints the rendered result to stdout
 (pg/render-string "Hello, {{name}}" {:name "Rich"}
-                  {:output (output/stdout-output)})
+                  {:output (output/to-stdout)})
 
-;; Outputs the rendered result to a file
+;; Writes the rendered result to a file
 (pg/render-string "Hello, {{name}}" {:name "Rich"}
-                  {:output (output/file-output "result.txt")})
+                  {:output (output/to-file "result.txt")})
 
 (pg/render-string "{{>node}}" {:content "X" :nodes [{:content "Y" :nodes []}]}
                   {:partials {:node "{{content}}<{{#nodes}}{{>node}}{{/nodes}}>"}})

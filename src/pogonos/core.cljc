@@ -26,7 +26,7 @@
        (assoc :partials (default-partials))
 
        (not (contains? opts :output))
-       (assoc :output (output/string-output))))))
+       (assoc :output (output/to-string))))))
 
 (defn parse-input
   ([in]
@@ -75,9 +75,10 @@
   ([template data]
    (render template data {}))
   ([template data opts]
-   (let [{:keys [output] :as opts} (fixup-options opts)]
-     (render/render (list data) output template opts)
-     (output))))
+   (let [{:keys [output] :as opts} (fixup-options opts)
+         out (output)]
+     (render/render (list data) out template opts)
+     (out))))
 
 (defn render-input
   ([in data]
@@ -85,9 +86,10 @@
   ([in data opts]
    (let [ctx (list data)
          {:keys [output]
-          :as opts} (fixup-options opts #?(:clj pres/resource-partials-resolver))]
-     (parse/parse in #(render/render ctx output % opts) opts)
-     (output))))
+          :as opts} (fixup-options opts #?(:clj pres/resource-partials-resolver))
+         out (output)]
+     (parse/parse in #(render/render ctx out % opts) opts)
+     (out))))
 
 (defn render-string
   ([s data]
