@@ -36,7 +36,7 @@
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
                  (buf x)))
-         opts (fixup-options opts #?(:clj partials/resource-partials-resolver))]
+         opts (fixup-options opts #?(:clj partials/resource-partials))]
      (parse/parse in out opts)
      (nodes/->Root (buf)))))
 
@@ -53,7 +53,7 @@
      ([file opts]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [opts (fixup-options opts partials/file-partials-resolver)
+          (let [opts (fixup-options opts partials/file-partials)
                 in (reader/make-file-reader f)]
             (try
               (parse-input in opts)
@@ -67,7 +67,7 @@
       (parse-resource res {}))
      ([res opts]
       (if-let [res (io/resource res)]
-        (let [opts (fixup-options opts partials/resource-partials-resolver)]
+        (let [opts (fixup-options opts partials/resource-partials)]
           (parse-file res opts))
         (throw (FileNotFoundException. res))))))
 
@@ -86,7 +86,7 @@
   ([in data opts]
    (let [ctx (list data)
          {:keys [output]
-          :as opts} (fixup-options opts #?(:clj partials/resource-partials-resolver))
+          :as opts} (fixup-options opts #?(:clj partials/resource-partials))
          out (output)]
      (parse/parse in #(render/render ctx out % opts) opts)
      (out))))
@@ -105,7 +105,7 @@
       (let [f (io/as-file file)]
         (if (.exists f)
           (let [opts (-> opts
-                         (fixup-options partials/file-partials-resolver)
+                         (fixup-options partials/file-partials)
                          (assoc :source (.getName f)))
                 in (reader/make-file-reader f)]
             (try
@@ -120,7 +120,7 @@
       (render-resource res data {}))
      ([res data opts]
       (if-let [res (io/resource res)]
-        (let [opts (fixup-options opts partials/resource-partials-resolver)]
+        (let [opts (fixup-options opts partials/resource-partials)]
           (render-file res data opts))
         (throw (FileNotFoundException. res))))))
 

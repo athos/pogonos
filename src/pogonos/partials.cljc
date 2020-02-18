@@ -19,8 +19,8 @@
        (some #(resolve-resource-from-base-path % name) base-paths))))
 
 #?(:clj
-   (defn resource-partials-resolver
-     ([] (resource-partials-resolver "."))
+   (defn resource-partials
+     ([] (resource-partials "."))
      ([base-path & base-paths]
       (->ResourcePartialsResolver (cons base-path base-paths)))))
 
@@ -38,8 +38,8 @@
              base-paths))))
 
 #?(:clj
-   (defn file-partials-resolver
-     ([] (file-partials-resolver "."))
+   (defn file-partials
+     ([] (file-partials "."))
      ([base-path & base-paths]
       (->FilePartialsResolver (cons base-path base-paths)))))
 
