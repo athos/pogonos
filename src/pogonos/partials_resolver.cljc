@@ -43,12 +43,6 @@
      ([base-path & base-paths]
       (->FilePartialsResolver (cons base-path base-paths)))))
 
-#?(:clj
-   (extend-type String
-     proto/IPartialsResolver
-     (resolve [this name]
-       (resolve-resource-from-base-path this name))))
-
 (extend-protocol proto/IPartialsResolver
   #?(:clj clojure.lang.APersistentMap
      ;; FIXME: CLJS does not have APersistentMap??
