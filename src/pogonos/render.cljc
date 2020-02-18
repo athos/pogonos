@@ -62,7 +62,8 @@
   ([ctx out x]
    (render ctx out x {}))
   ([ctx out x {:keys [partials]}]
-   (binding [*partials-resolver* (or partials *partials-resolver*)]
+   (binding [*partials-resolver* (or (some-> partials partials/->resolver)
+                                     *partials-resolver*)]
      (render* ctx out x))))
 
 (extend-protocol proto/IRenderable

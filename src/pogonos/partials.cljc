@@ -43,23 +43,37 @@
      ([base-path & base-paths]
       (->FilePartialsResolver (cons base-path base-paths)))))
 
-(extend-protocol proto/IPartialsResolver
+(defrecord FnPartialsResolver [f]
+  proto/IPartialsResolver
+  (resolve [this name]
+    (some-> (f (keyword name)) reader/->reader)))
+
+(defn fn-partials [f]
+  (->FnPartialsResolver f))
+
+(extend-protocol proto/ToPartialsResolver
   #?(:clj clojure.lang.APersistentMap
      ;; FIXME: CLJS does not have APersistentMap??
      :cljs PersistentArrayMap)
-  (resolve [this name]
-    (some-> (get this (keyword name)) reader/->reader))
+  (->resolver [this]
+    (fn-partials this))
 
-  #?(:clj clojure.lang.Fn :cljs function)
-  (resolve [this name]
-    (some-> (this (keyword name)) reader/->reader)))
+  #?(:clj clojure.lang.AFn :cljs function)
+  (->resolver [this]
+    (fn-partials this)))
 
 (defrecord CompositePartialsResolver [resolvers]
   proto/IPartialsResolver
   (resolve [this name]
     (some #(proto/resolve % name) resolvers)))
 
-(defn compose [& resolvers]
-  (->CompositePartialsResolver resolvers))
+(defn ->resolver [x]
+  (if (satisfies? proto/IPartialsResolver x)
+    x
+    (proto/->resolver x)))
 
-(def ^{:arglists '([resolver name])} resolve proto/resolve)
+(defn compose [& resolvers]
+  (->CompositePartialsResolver (mapv ->resolver resolvers)))
+
+(defn resolve [resolver name]
+  (proto/resolve resolver name))

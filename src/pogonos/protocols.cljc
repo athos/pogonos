@@ -16,3 +16,6 @@
 
 (defprotocol IPartialsResolver
   (resolve [this name]))
+
+(defprotocol ToPartialsResolver
+  (->resolver [this]))
