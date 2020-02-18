@@ -11,8 +11,7 @@
      (:import [pogonos.nodes
                Inverted Partial Root Section UnescapedVariable Variable])))
 
-(def ^:dynamic *partials-resolver*
-  #?(:clj (pres/file-partials-resolver)))
+(def ^:dynamic *partials-resolver*)
 
 (defn escape [^String s]
   #?(:clj

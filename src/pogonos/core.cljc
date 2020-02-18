@@ -9,16 +9,34 @@
             [pogonos.render :as render])
   #?(:clj (:import [java.io Closeable File FileNotFoundException])))
 
+(def ^:private default-options (atom nil))
+
+(defn set-default-options! [options]
+  (reset! default-options options)
+  nil)
+
+(defn- fixup-options
+  ([opts]
+   (fixup-options opts nil))
+  ([opts default-partials]
+   (let [opts (merge @default-options opts)]
+     (cond-> opts
+       (and (not (contains? opts :partials))
+            (not (nil? default-partials)))
+       (assoc :partials (default-partials))
+
+       (not (contains? opts :output))
+       (assoc :output (output/string-output))))))
+
 (defn parse-input
   ([in]
    (parse-input in {}))
-  ([in {:keys [partials] :as opts}]
+  ([in opts]
    (let [buf (parse/make-node-buffer)
          out (fn [x]
                (when-not (satisfies? nodes/Invisible x)
                  (buf x)))
-         opts (assoc opts :partials
-                     (or partials #?(:clj (pres/resource-partials-resolver))))]
+         opts (fixup-options opts #?(:clj pres/resource-partials-resolver))]
      (parse/parse in out opts)
      (nodes/->Root (buf)))))
 
@@ -35,7 +53,8 @@
      ([file opts]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [in (reader/make-file-reader f)]
+          (let [opts (fixup-options opts pres/file-partials-resolver)
+                in (reader/make-file-reader f)]
             (try
               (parse-input in opts)
               (finally
@@ -48,25 +67,25 @@
       (parse-resource res {}))
      ([res opts]
       (if-let [res (io/resource res)]
-        (parse-file res opts)
+        (let [opts (fixup-options opts pres/resource-partials-resolver)]
+          (parse-file res opts))
         (throw (FileNotFoundException. res))))))
 
 (defn render
   ([template data]
    (render template data {}))
-  ([template data
-    {:keys [output] :or {output (output/string-output)} :as opts}]
-   (render/render (list data) output template opts)
-   (output)))
+  ([template data opts]
+   (let [{:keys [output] :as opts} (fixup-options opts)]
+     (render/render (list data) output template opts)
+     (output))))
 
 (defn render-input
   ([in data]
    (render-input in data {}))
-  ([in data
-    {:keys [partials output] :or {output (output/string-output)} :as opts}]
+  ([in data opts]
    (let [ctx (list data)
-         opts (assoc opts :partials
-                     (or partials #?(:clj (pres/resource-partials-resolver))))]
+         {:keys [output]
+          :as opts} (fixup-options opts #?(:clj pres/resource-partials-resolver))]
      (parse/parse in #(render/render ctx output % opts) opts)
      (output))))
 
@@ -83,9 +102,9 @@
      ([file data {:keys [partials] :as opts}]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [opts (assoc opts
-                            :source (.getName f)
-                            :partials (or partials (pres/file-partials-resolver)))
+          (let [opts (-> opts
+                         (fixup-options pres/file-partials-resolver)
+                         (assoc :source (.getName f)))
                 in (reader/make-file-reader f)]
             (try
               (render-input in data opts)
@@ -99,12 +118,9 @@
       (render-resource res data {}))
      ([res data opts]
       (if-let [res (io/resource res)]
-        (render-file res data opts)
+        (let [opts (fixup-options opts pres/resource-partials-resolver)]
+          (render-file res data opts))
         (throw (FileNotFoundException. res))))))
-
-#?(:clj
-   (defn set-default-partials-base-path! [base-path]
-     (pres/set-default-partials-base-path! base-path)))
 
 (defn perr
   ([]
