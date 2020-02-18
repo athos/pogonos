@@ -31,11 +31,14 @@
      ([file]
       (parse-file file {}))
      ([file opts]
-      (let [in (reader/make-file-reader file)]
-        (try
-          (parse-input in opts)
-          (finally
-            (reader/close in)))))))
+      (let [f (io/as-file file)]
+        (if (.exists f)
+          (let [in (reader/make-file-reader f)]
+            (try
+              (parse-input in opts)
+              (finally
+                (reader/close in))))
+          (throw (FileNotFoundException. (.getName f))))))))
 
 #?(:clj
    (defn parse-resource
@@ -73,15 +76,15 @@
      ([file data]
       (render-file file data {}))
      ([file data opts]
-      (let [opts (assoc opts :source
-                        (if (string? file)
-                          file
-                          (.getName (io/as-file file))))
-            in (reader/make-file-reader file)]
-        (try
-          (render-input in data opts)
-          (finally
-            (reader/close in)))))))
+      (let [f (io/as-file file)]
+        (if (.exists f)
+          (let [opts (assoc opts :source (.getName f))
+                in (reader/make-file-reader f)]
+            (try
+              (render-input in data opts)
+              (finally
+                (reader/close in))))
+          (throw (FileNotFoundException. (.getName f))))))))
 
 #?(:clj
    (defn render-resource
