@@ -12,6 +12,9 @@
                Inverted Partial Root Section UnescapedVariable Variable])))
 
 (def ^:dynamic *partials-resolver*)
+;; TODO: Now it's just a mitigation for inefficiency around partials rendering.
+;; There should be a more general caching mechanism in the future.
+(def ^:dynamic *partials-cache*)
 
 (defn escape [^String s]
   #?(:clj
@@ -62,8 +65,8 @@
   ([ctx out x]
    (render ctx out x {}))
   ([ctx out x {:keys [partials]}]
-   (binding [*partials-resolver* (or (some-> partials partials/->resolver)
-                                     *partials-resolver*)]
+   (binding [*partials-resolver* (some-> partials partials/->resolver)
+             *partials-cache* {}]
      (render* ctx out x))))
 
 (extend-protocol proto/IRenderable
@@ -121,11 +124,15 @@
           (render* ctx out node)))))
 
   #?(:clj Partial :cljs nodes/Partial)
-  (render [this ctx out]
-    (let [name (:name this)]
+  (render [{:keys [name indent]} ctx out]
+    (if-let [cached (get *partials-cache* [name indent])]
+      (render* ctx out cached)
       (when-let [r (partials/resolve *partials-resolver* name)]
-        (try
-          (parse/parse r #(render* ctx out %)
-                       {:source name :indent (:indent this)})
-          (finally
-            (reader/close r)))))))
+        (let [buf (parse/make-node-buffer)]
+          (try
+            (parse/parse r buf {:source name :indent indent})
+            (let [node (nodes/->Root (buf))]
+              (render* ctx out node)
+              (set! *partials-cache* (assoc *partials-cache* [name indent] node)))
+            (finally
+              (reader/close r))))))))
