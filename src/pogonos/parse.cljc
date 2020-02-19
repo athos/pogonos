@@ -182,9 +182,9 @@
 (defn- parse-partial [parser pre start]
   (let [name (extract-tag-content parser)]
     (with-surrounding-whitespaces-processed parser pre start
-      (fn [pre post]
-        (emit parser pre)
-        (->> (str/replace (str pre) #"\S" " ")
+      (fn [pre' post]
+        (emit parser pre')
+        (->> (when (or pre' post) pre) ;; if standalone, pick this indent
              (str (:indent parser)) ;; prepend current indent
              (nodes/->Partial (keyword nil (pstr/trim name)))
              (emit parser))))))
