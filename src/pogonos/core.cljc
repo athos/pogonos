@@ -130,5 +130,4 @@
   ([err]
    (let [data (ex-data err)]
      (binding [error/*show-error-details* true]
-       (error/print-error (:message data) data))
-     (newline))))
+       (println (error/stringify-error (:message data) data))))))

@@ -35,6 +35,10 @@
   (print-error-message msg ex-data)
   (print-detailed-error-info ex-data))
 
+(defn stringify-error [msg ex-data]
+  (with-out-str
+    (print-error msg ex-data)))
+
 (defn error
   ([type msg line line-num col-num]
    (error type msg line line-num col-num {}))
@@ -44,6 +48,5 @@
                    line (assoc :error-line line)
                    line-num (assoc :line (some-> line-num inc))
                    col-num (assoc :column (some-> col-num inc)))
-         msg' (with-out-str
-                (print-error msg ex-data))]
+         msg' (stringify-error msg ex-data)]
      (throw (ex-info msg' ex-data)))))
