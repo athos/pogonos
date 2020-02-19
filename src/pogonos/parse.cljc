@@ -186,7 +186,7 @@
         (emit parser pre)
         (->> (str/replace (str pre) #"\S" " ")
              (str (:indent parser)) ;; prepend current indent
-             (nodes/->Partial (pstr/trim name))
+             (nodes/->Partial (keyword nil (pstr/trim name)))
              (emit parser))))))
 
 (defn- parse-comment [parser pre start]

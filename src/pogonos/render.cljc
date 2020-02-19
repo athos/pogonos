@@ -124,15 +124,16 @@
           (render* ctx out node)))))
 
   #?(:clj Partial :cljs nodes/Partial)
-  (render [{:keys [name indent]} ctx out]
-    (if-let [cached (get *partials-cache* [name indent])]
+  (render [{partial-name :name :keys [indent]} ctx out]
+    (if-let [cached (get *partials-cache* [partial-name indent])]
       (render* ctx out cached)
-      (when-let [r (partials/resolve *partials-resolver* name)]
+      (when-let [r (partials/resolve *partials-resolver* partial-name)]
         (let [buf (parse/make-node-buffer)]
           (try
-            (parse/parse r buf {:source name :indent indent})
+            (parse/parse r buf {:source (name partial-name) :indent indent})
             (let [node (nodes/->Root (buf))]
               (render* ctx out node)
-              (set! *partials-cache* (assoc *partials-cache* [name indent] node)))
+              (set! *partials-cache*
+                    (assoc *partials-cache* [partial-name indent] node)))
             (finally
               (reader/close r))))))))

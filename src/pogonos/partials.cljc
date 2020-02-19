@@ -5,8 +5,8 @@
             [pogonos.reader :as reader]))
 
 #?(:clj
-   (defn- resolve-resource-from-base-path [base-path name]
-     (when-let [res (->> name
+   (defn- resolve-resource-from-base-path [base-path partial-name]
+     (when-let [res (->> (name partial-name)
                          (format "%s%s%s.mustache" base-path
                                  (System/getProperty "file.separator"))
                          io/resource)]
@@ -25,8 +25,8 @@
       (->ResourcePartialsResolver (cons base-path base-paths)))))
 
 #?(:clj
-   (defn- resolve-file-from-base-path [base-path name]
-     (let [file (io/file base-path (str name ".mustache"))]
+   (defn- resolve-file-from-base-path [base-path partial-name]
+     (let [file (io/file base-path (str (name partial-name) ".mustache"))]
        (when (.exists file)
          (reader/make-file-reader file)))))
 
@@ -46,7 +46,7 @@
 (defrecord FnPartialsResolver [f]
   proto/IPartialsResolver
   (resolve [this name]
-    (some-> (f (keyword name)) reader/->reader)))
+    (some-> (f name) reader/->reader)))
 
 (defn fn-partials [f]
   (->FnPartialsResolver f))
