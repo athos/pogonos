@@ -15,7 +15,8 @@
   (stringify [this out]))
 
 (defprotocol IPartialsResolver
-  (resolve [this name]))
+  (resolve [this name])
+  (cacheable? [this name]))
 
 (defprotocol ToPartialsResolver
   (->resolver [this]))

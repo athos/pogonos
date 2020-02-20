@@ -16,7 +16,8 @@
    (defrecord ResourcePartialsResolver [base-paths]
      proto/IPartialsResolver
      (resolve [this name]
-       (some #(resolve-resource-from-base-path % name) base-paths))))
+       (some #(resolve-resource-from-base-path % name) base-paths))
+     (cacheable? [this name] true)))
 
 #?(:clj
    (defn resource-partials
@@ -35,7 +36,8 @@
      proto/IPartialsResolver
      (resolve [this name]
        (some #(resolve-file-from-base-path % name)
-             base-paths))))
+             base-paths))
+     (cacheable? [this name] true)))
 
 #?(:clj
    (defn file-partials
@@ -46,7 +48,8 @@
 (defrecord FnPartialsResolver [f]
   proto/IPartialsResolver
   (resolve [this name]
-    (some-> (f name) reader/->reader)))
+    (some-> (f name) reader/->reader))
+  (cacheable? [this name] true))
 
 (defn fn-partials [f]
   (->FnPartialsResolver f))
@@ -65,7 +68,10 @@
 (defrecord CompositePartialsResolver [resolvers]
   proto/IPartialsResolver
   (resolve [this name]
-    (some #(proto/resolve % name) resolvers)))
+    (some #(proto/resolve % name) resolvers))
+  (cacheable? [this name]
+    (when-first [resolver (filter #(proto/resolve % name) resolvers)]
+      (proto/cacheable? resolver name))))
 
 (defn ->resolver [x]
   (if (satisfies? proto/IPartialsResolver x)
@@ -75,5 +81,15 @@
 (defn compose [& resolvers]
   (->CompositePartialsResolver (mapv ->resolver resolvers)))
 
+(defn with-caching-disabled [resolver]
+  (let [resolver (->resolver resolver)]
+    (reify proto/IPartialsResolver
+      (resolve [this name]
+        (proto/resolve resolver name))
+      (cacheable? [this name] false))))
+
 (defn resolve [resolver name]
   (proto/resolve resolver name))
+
+(defn cacheable? [resolver name]
+  (proto/cacheable? resolver name))

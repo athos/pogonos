@@ -133,7 +133,8 @@
             (parse/parse r buf {:source (name partial-name) :indent indent})
             (let [node (nodes/->Root (buf))]
               (render* ctx out node)
-              (set! *partials-cache*
-                    (assoc *partials-cache* [partial-name indent] node)))
+              (when (partials/cacheable? *partials-resolver* partial-name)
+                (set! *partials-cache*
+                      (assoc *partials-cache* [partial-name indent] node))))
             (finally
               (reader/close r))))))))
