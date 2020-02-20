@@ -10,48 +10,65 @@
   (cacheable? [this name] false))
 
 #?(:clj
-   (defn- resolve-resource-from-base-path [base-path partial-name]
-     (let [filename (cond->> (str (name partial-name) ".mustache")
-                      base-path
-                      (str base-path (System/getProperty "file.separator")))]
-       (when-let [res (io/resource filename)]
+   (defn- resolve-resource-from-base-path [base-path filename]
+     (let [file-path (cond->> (name filename)
+                       base-path
+                       (str base-path (System/getProperty "file.separator")))]
+       (when-let [res (io/resource file-path)]
          (reader/make-file-reader res)))))
 
 #?(:clj
-   (defrecord ResourcePartialsResolver [base-paths]
+   (defrecord ResourcePartialsResolver [base-paths suffix]
      proto/IPartialsResolver
-     (resolve [this name]
-       (if (seq base-paths)
-         (some #(resolve-resource-from-base-path % name) base-paths)
-         (resolve-resource-from-base-path nil name)))
-     (cacheable? [this name] true)))
+     (resolve [this partial-name]
+       (let [filename (cond-> (name partial-name)
+                        suffix (str suffix))]
+         (if (seq base-paths)
+           (some #(resolve-resource-from-base-path % filename) base-paths)
+           (resolve-resource-from-base-path nil filename))))
+     (cacheable? [this partial-name] true)))
 
 #?(:clj
-   (defn resource-partials [& base-paths]
-     (->ResourcePartialsResolver (some-> (not-empty base-paths) vec))))
+   (defn resource-partials
+     ([] (resource-partials []))
+     ([base-path-or-base-paths]
+      (resource-partials base-path-or-base-paths ".mustache"))
+     ([base-path-or-base-paths suffix]
+      (let [base-paths (if (coll? base-path-or-base-paths)
+                         base-path-or-base-paths
+                         [base-path-or-base-paths])]
+        (->ResourcePartialsResolver base-paths suffix)))))
 
 #?(:clj
-   (defn- resolve-file-from-base-path [base-path partial-name]
-     (let [filename (str (name partial-name) ".mustache")
-           file (if base-path
+   (defn- resolve-file-from-base-path [base-path filename]
+     (let [file (if base-path
                   (io/file base-path filename)
                   (io/file filename))]
        (when (.exists file)
          (reader/make-file-reader file)))))
 
 #?(:clj
-   (defrecord FilePartialsResolver [base-paths]
+   (defrecord FilePartialsResolver [base-paths suffix]
      proto/IPartialsResolver
-     (resolve [this name]
-       (if (seq base-paths)
-         (some #(resolve-file-from-base-path % name)
-               base-paths)
-         (resolve-file-from-base-path nil name)))
-     (cacheable? [this name] true)))
+     (resolve [this partial-name]
+       (let [filename (cond-> (name partial-name)
+                        suffix (str suffix))]
+         (if (seq base-paths)
+           (some #(resolve-file-from-base-path % filename)
+                 base-paths)
+           (resolve-file-from-base-path nil filename))))
+     (cacheable? [this partial-name] true)))
 
 #?(:clj
-   (defn file-partials [& base-paths]
-     (->FilePartialsResolver (some-> (not-empty base-paths) vec))))
+   (defn file-partials
+     ([] (file-partials []))
+     ([base-path-or-base-paths]
+      (file-partials base-path-or-base-paths ".mustache"))
+     ([base-path-or-base-paths suffix]
+      (let [base-paths (if (coll? base-path-or-base-paths)
+                         base-path-or-base-paths
+                         [base-path-or-base-paths])]
+        (->FilePartialsResolver base-paths suffix)))))
 
 (defrecord FnPartialsResolver [f]
   proto/IPartialsResolver
