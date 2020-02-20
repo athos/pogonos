@@ -4,6 +4,11 @@
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader]))
 
+(extend-protocol proto/IPartialsResolver
+  nil
+  (resolve [this name])
+  (cacheable? [this name] false))
+
 #?(:clj
    (defn- resolve-resource-from-base-path [base-path partial-name]
      (when-let [res (->> (name partial-name)
