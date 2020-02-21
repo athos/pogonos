@@ -18,6 +18,11 @@
           (out ".")
           (out (name k))))))
 
+(defn stringify* [x out]
+  (if (string? x)
+    (out x)
+    (proto/stringify x out)))
+
 (defn- stringify-section [sigil section out]
   (when-let [pre (:pre (meta section))]
     (out pre))
@@ -30,18 +35,14 @@
   (binding [*open-delim* (or (:open (meta section)) *open-delim*)
             *close-delim* (or (:close (meta section)) *close-delim*)]
     (doseq [node (:nodes section)]
-      (proto/stringify node out))))
+      (stringify* node out))))
 
 (extend-protocol proto/IStringifiable
-  #?(:clj String :cljs string)
-  (stringify [this out]
-    (out this))
-
   #?(:clj clojure.lang.PersistentVector
      :cljs PersistentVector)
   (stringify [this out]
     (doseq [node this]
-      (proto/stringify node out)))
+      (stringify* node out)))
 
   #?(:clj Variable :cljs nodes/Variable)
   (stringify [this out]
@@ -107,5 +108,5 @@
   (let [out (output/string-output)]
     (binding [*open-delim* (or open-delim "{{")
               *close-delim* (or close-delim "}}")]
-      (proto/stringify node out)
+      (stringify* node out)
       (out))))
