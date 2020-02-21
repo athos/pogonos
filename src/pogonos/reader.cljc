@@ -6,7 +6,11 @@
             [pogonos.strings :as pstr])
   #?(:clj (:import [java.io Reader Closeable])))
 
-(defn ->reader [x] (proto/->reader x))
+(defn ->reader [x]
+  (if (satisfies? proto/IReader x)
+    x
+    (proto/->reader x)))
+
 (defn close [reader] (proto/close reader))
 
 (deftype StringReader [src ^:unsynchronized-mutable offset]
