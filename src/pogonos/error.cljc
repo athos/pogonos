@@ -20,20 +20,20 @@
     (when *show-error-details*
       (println \:))))
 
-(defn- print-detailed-error-info [{:keys [error-line line column] :as ex-data}]
-  (when (and *show-error-details* (has-error-details? ex-data))
-    (print "\n  ")
-    (print line)
-    (print "| ")
-    (println error-line)
-    (print "    ")
-    (dotimes [_ (+ (count (str line)) (dec column))]
-      (print \space))
-    (print "^^")))
+(defn- print-detailed-error-info [{:keys [error-line line column]}]
+  (print "\n  ")
+  (print line)
+  (print "| ")
+  (println error-line)
+  (print "    ")
+  (dotimes [_ (+ (count (str line)) (dec column))]
+    (print \space))
+  (print "^^"))
 
 (defn print-error [msg ex-data]
   (print-error-message msg ex-data)
-  (print-detailed-error-info ex-data))
+  (when (and *show-error-details* (has-error-details? ex-data))
+    (print-detailed-error-info ex-data)))
 
 (defn stringify-error [msg ex-data]
   (with-out-str
