@@ -6,7 +6,10 @@
   :profiles {:provided
              {:dependencies [[org.clojure/clojure "1.10.1"]
                              [org.clojure/clojurescript "1.10.597"]]}
-             :test
+             :dev
+             ;; these are necessary only for tests, so ideally they should go
+             ;; under :test profile, but our IDE requires them to be here
+             ;; to load test code fine
              {:dependencies [[org.clojure/data.json "0.2.7"]]
               :resource-paths ["test-resources"]}}
   :repl-options {:init-ns pogonos.core})
