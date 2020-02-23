@@ -190,27 +190,26 @@
              (emit parser))))))
 
 (defn- parse-comment [parser pre start]
-  (let [comment (read-until parser *close-delim*)]
+  (if-let [comment (read-until parser *close-delim*)]
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
-        (if comment
-          (-> (nodes/->Comment [comment])
-              (cond-> (or pre post) (with-meta {:pre pre :post post}))
-              ((:out parser)))
-          (loop [acc (cond-> [] (not post) (conj (read-line parser)))]
-            (let [prev-line (current-line parser)
-                  prev-line-num (line-num parser)]
-              (if-let [comment (read-until parser *close-delim*)]
-                (do (when (reader/blank-trailing? (:in parser))
-                      (read-line parser))
-                    (emit parser (nodes/->Comment (conj acc comment))))
-                (if-let [line (read-line parser)]
-                  (recur (conj acc line))
-                  (let [line (strip-newline prev-line)]
-                    (error :missing-close-delim
-                           (str "Missing closing delimiter \"" *close-delim* "\""
-                                " for comment tag")
-                           line prev-line-num (count line))))))))))))
+        (-> (nodes/->Comment [comment])
+            (cond-> (or pre post) (with-meta {:pre pre :post post}))
+            ((:out parser)))))
+    (do
+      (emit parser pre)
+      (loop [acc [(read-line parser)]]
+        (let [prev-line (current-line parser)
+              prev-line-num (line-num parser)]
+          (if-let [comment (read-until parser *close-delim*)]
+            (emit parser (nodes/->Comment (conj acc comment)))
+            (if-let [line (read-line parser)]
+              (recur (conj acc line))
+              (let [line (strip-newline prev-line)]
+                (error :missing-close-delim
+                       (str "Missing closing delimiter \"" *close-delim* "\""
+                            " for comment tag")
+                       line prev-line-num (count line))))))))))
 
 (defn- parse-set-delimiters [parser pre start]
   (let [line (current-line parser)

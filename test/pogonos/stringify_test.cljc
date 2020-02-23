@@ -80,12 +80,7 @@
       (with-meta
         (nodes/->Comment [" foo "])
         {:pre "  " :post "  \n"})
-      "  {{! foo }}  \n"
-
-      (with-meta
-        (nodes/->Comment [" foo\n" "bar\n" "baz "])
-        {:pre "  " :post "  \n"})
-      "  {{! foo\nbar\nbaz }}  \n")
+      "  {{! foo }}  \n")
     (are [input expected] (= expected (stringify input "<%" "%>"))
       (nodes/->Comment []) "<%!%>"
       (nodes/->Comment [" "]) "<%! %>"
@@ -94,12 +89,7 @@
       (with-meta
         (nodes/->Comment [" foo "])
         {:pre "  " :post "  \n"})
-      "  <%! foo %>  \n"
-
-      (with-meta
-        (nodes/->Comment [" foo\n" "bar\n" "baz "])
-        {:pre "  " :post "  \n"})
-      "  <%! foo\nbar\nbaz %>  \n"))
+      "  <%! foo %>  \n"))
   (testing "set delimiters"
     (are [input expected] (= expected (stringify input))
       (nodes/->SetDelimiter "<%" "%>") "{{=<% %>=}}"
