@@ -73,8 +73,11 @@
   #?(:clj Partial :cljs nodes/Partial)
   (stringify [this out]
     (out *open-delim*)
-    (out (:name this))
-    (out *open-delim*))
+    (out ">")
+    (out (name (:name this)))
+    (out *close-delim*)
+    (when-let [post (:post (meta this))]
+      (out post)))
 
   #?(:clj Comment :cljs nodes/Comment)
   (stringify [this out]
