@@ -250,7 +250,8 @@
               \> (parse-partial parser pre start)
               \! (parse-comment parser pre start)
               \= (parse-set-delimiters parser pre start)
-              \{ (if (= *open-delim* default-open-delim)
+              \{ (if (and (= *open-delim* default-open-delim)
+                          (= *close-delim* default-close-delim))
                    (parse-unescaped-variable parser pre)
                    (error :invalid-unescaped-variable-tag
                           (str "Unescaped variable tag \"" *open-delim* "{\" "
