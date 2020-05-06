@@ -53,12 +53,9 @@
      ([file opts]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (let [opts (fixup-options opts partials/file-partials)
-                in (reader/make-file-reader f)]
-            (try
-              (parse-input in opts)
-              (finally
-                (reader/close in))))
+          (let [opts (fixup-options opts partials/file-partials)]
+            (with-open [in ^Closeable (reader/make-file-reader f)]
+              (parse-input in opts)))
           (throw (FileNotFoundException. (.getName f))))))))
 
 #?(:clj
@@ -68,7 +65,8 @@
      ([res opts]
       (if-let [res (io/resource res)]
         (let [opts (fixup-options opts partials/resource-partials)]
-          (parse-file res opts))
+          (with-open [in ^Closeable (reader/make-file-reader res)]
+            (parse-input in opts)))
         (throw (FileNotFoundException. res))))))
 
 (defn render
@@ -106,12 +104,9 @@
         (if (.exists f)
           (let [opts (-> opts
                          (fixup-options partials/file-partials)
-                         (assoc :source (.getName f)))
-                in (reader/make-file-reader f)]
-            (try
-              (render-input in data opts)
-              (finally
-                (reader/close in))))
+                         (assoc :source (.getName f)))]
+            (with-open [in ^Closeable (reader/make-file-reader f)]
+              (render-input in data opts)))
           (throw (FileNotFoundException. (.getName f))))))))
 
 #?(:clj
@@ -120,8 +115,10 @@
       (render-resource res data {}))
      ([res data opts]
       (if-let [res (io/resource res)]
-        (let [opts (fixup-options opts partials/resource-partials)]
-          (render-file res data opts))
+        (let [opts (cond-> (fixup-options opts partials/resource-partials)
+                     (string? res) (assoc :source res))]
+          (with-open [in ^Closeable (reader/make-file-reader res)]
+            (render-input in data opts)))
         (throw (FileNotFoundException. res))))))
 
 (defn perr
