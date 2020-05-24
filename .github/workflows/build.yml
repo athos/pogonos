@@ -1,0 +1,42 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: '11'
+    - name: Setup Clojure CLI
+      uses: DeLaGuardo/setup-clojure@2.0
+      with:
+        tools-deps: latest
+    - name: Cache .m2
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+    - name: Cache .gitlibs
+      uses: actions/cache@v1
+      with:
+        path: ~/.gitlibs
+        key: ${{ runner.os }}-gitlibs-${{ hashFiles('deps.edn') }}
+        restore-keys: |
+          ${{ runner.os }}-gitlibs-
+    - name: Cache .cpcache
+      uses: actions/cache@v1
+      with:
+        path: .cpcache
+        key: ${{ runner.os }}-cpcache-${{ hashFiles('deps.edn') }}
+    - name: Install deps
+      run: clojure -Rcheck:test -Stree
+    - name: Run tests
+      run: clojure -Atest
