@@ -188,10 +188,12 @@
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre' post]
         (emit parser pre')
-        (->> (when (or pre' post) pre) ;; if standalone, pick this indent
-             (str (:indent parser)) ;; prepend current indent
-             (nodes/->Partial (keyword nil (pstr/trim name)))
-             (emit parser))))))
+        (let [node (->> (when (or pre' post) pre) ;; if standalone, pick this indent
+                        (str (:indent parser)) ;; prepend current indent
+                        (nodes/->Partial (keyword nil (pstr/trim name))))]
+          (-> node
+              (cond-> post (with-meta {:post post}))
+              ((:out parser))))))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
