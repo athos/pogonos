@@ -104,10 +104,14 @@
         keys (parse-keys parser name "}}}")]
     (emit parser (nodes/->UnescapedVariable keys))))
 
-(defn- standalone? [{:keys [in]} pre start]
-  (and (= start (count pre))
-       (str/blank? pre)
-       (reader/blank-trailing? in)))
+(defn- standalone?
+  ([parser pre start]
+   (standalone? parser pre start false))
+  ([{:keys [in]} pre start ignore-trailing-blank?]
+   (and (= start (count pre))
+        (str/blank? pre)
+        (or ignore-trailing-blank?
+            (reader/blank-trailing? in)))))
 
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]
@@ -196,13 +200,19 @@
         (-> (nodes/->Comment [comment])
             (cond-> (or pre post) (with-meta {:pre pre :post post}))
             ((:out parser)))))
-    (do
-      (emit parser pre)
+    (let [standalone-open? (standalone? parser pre start true)]
+      (when-not standalone-open?
+        (emit parser pre))
       (loop [acc [(read-line parser)]]
         (let [prev-line (current-line parser)
               prev-line-num (line-num parser)]
           (if-let [comment (read-until parser *close-delim*)]
-            (emit parser (nodes/->Comment (conj acc comment)))
+            (let [post (when (reader/blank-trailing? (:in parser))
+                         (read-line parser))]
+              (->> (cond-> (nodes/->Comment (conj acc comment))
+                     (or (and standalone-open? (seq pre)) (seq post))
+                     (with-meta {:pre pre :post post}))
+                   (emit parser)))
             (if-let [line (read-line parser)]
               (recur (conj acc line))
               (let [line (strip-newline prev-line)]
