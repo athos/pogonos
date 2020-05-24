@@ -38,7 +38,9 @@
                  (buf x)))
          opts (fixup-options opts #?(:clj partials/resource-partials))]
      (parse/parse in out opts)
-     (nodes/->Root (buf)))))
+     (with-meta
+       (nodes/->Root (buf))
+       {:options opts}))))
 
 (defn parse-string
   ([s]
@@ -73,7 +75,9 @@
   ([template data]
    (render template data {}))
   ([template data opts]
-   (let [{:keys [output] :as opts} (fixup-options opts)
+   (let [{:keys [output] :as opts} (-> (:options (meta template))
+                                       (merge opts)
+                                       fixup-options)
          out (output)]
      (render/render (list data) out template opts)
      (out))))
