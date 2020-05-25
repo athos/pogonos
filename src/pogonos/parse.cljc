@@ -190,16 +190,17 @@
                 :expected expected :actual actual})))))
 
 (defn- parse-partial [parser pre start]
-  (let [name (extract-tag-content parser)]
-    (with-surrounding-whitespaces-processed parser pre start
-      (fn [pre' post]
-        (emit parser pre')
-        (let [node (->> (when (or pre' post) pre) ;; if standalone, pick this indent
-                        (str (:indent parser)) ;; prepend current indent
-                        (nodes/->Partial (keyword nil (pstr/trim name))))]
-          (-> node
-              (cond-> post (with-meta {:post post}))
-              ((:out parser))))))))
+  (let [name (extract-tag-content parser)
+        standalone? (standalone? parser pre start)
+        post (when standalone? (not-empty (read-line parser)))
+        indent (when standalone?
+                 ;; if standalone, append current indent to previous one
+                 ;; otherwise, ignore both current and previous indents
+                 (not-empty (str (:indent parser) pre)))]
+    (emit parser (not-empty pre))
+    (-> (nodes/->Partial (keyword nil (pstr/trim name)) indent)
+        (cond-> post (with-meta {:post post}))
+        ((:out parser)))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
