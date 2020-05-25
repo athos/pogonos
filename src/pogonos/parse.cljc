@@ -85,12 +85,14 @@
        (if-let [i (pstr/index-of content *open-delim* 0)]
          (error :missing-close-delim
                 (str "Missing closing delimiter \"" close-delim "\"")
-                (strip-newline line) line-num (+ col-num (dec i)))
+                (strip-newline line) line-num (+ col-num (dec i))
+                {:close-delim close-delim})
          content)
        (let [line (strip-newline line)]
          (error :missing-close-delim
                 (str "Missing closing delimiter \"" close-delim "\"")
-                line line-num (count line)))))))
+                line line-num (count line)
+                {:close-delim close-delim}))))))
 
 (defn- parse-variable [parser pre unescaped?]
   (emit parser pre)
@@ -176,12 +178,16 @@
           (-> (nodes/->SectionEnd keys)
               (cond-> (or pre post) (with-meta {:pre pre :post post}))
               ((:out parser)))))
-      (error :inconsistent-section-end
-             (str "Expected "
-                  *open-delim* "/" (stringify-keys (:section parser)) *close-delim*
-                  " tag, but got "
-                  *open-delim* "/" (stringify-keys keys) *close-delim*)
-             (current-line parser) (line-num parser) start))))
+      (let [expected (stringify-keys (:section parser))
+            actual (stringify-keys keys)]
+        (error :inconsistent-section-end
+               (str "Expected "
+                    *open-delim* "/" expected *close-delim*
+                    " tag, but got "
+                    *open-delim* "/" actual *close-delim*)
+               (current-line parser) (line-num parser) start
+               {:open-delim *open-delim* :close-delim *close-delim*
+                :expected expected :actual actual})))))
 
 (defn- parse-partial [parser pre start]
   (let [name (extract-tag-content parser)]
@@ -221,7 +227,8 @@
                 (error :missing-close-delim
                        (str "Missing closing delimiter \"" *close-delim* "\""
                             " for comment tag")
-                       line prev-line-num (count line))))))))))
+                       line prev-line-num (count line)
+                       {:close-delim *close-delim*})))))))))
 
 (defn- parse-set-delimiters [parser pre start]
   (let [line (current-line parser)
@@ -234,7 +241,9 @@
           (error :invalid-set-delimiters
                  (str "Invalid set delimiters tag "
                       *open-delim* \= delims \= *close-delim*)
-                 line line-num start))
+                 line line-num start
+                 {:open-delim *open-delim* :close-delim *close-delim*
+                  :delims delims}))
         (set! *open-delim* open)
         (set! *close-delim* close)
         (with-surrounding-whitespaces-processed parser pre start
@@ -245,7 +254,9 @@
       (error :invalid-set-delimiters
              (str "Invalid set delimiters tag "
                   *open-delim* \= delims \= *close-delim*)
-             line line-num start))))
+             line line-num start
+             {:open-delim *open-delim* :close-delim *close-delim*
+              :delims delims}))))
 
 (defn- parse-tag [parser pre start]
   (let [line (current-line parser)
@@ -268,13 +279,15 @@
                    (error :invalid-unescaped-variable-tag
                           (str "Unescaped variable tag \"" *open-delim* "{\" "
                                "cannot be used while changing delimiters")
-                          line line-num start))
+                          line line-num start
+                          {:open-delim *open-delim*}))
               (do (unread-char parser)
                   (parse-variable parser pre false)))
             true))
       (error :incomplete-tag
              (str "Found incomplete tag \"" *open-delim* "\"")
-             (strip-newline line) line-num start))))
+             (strip-newline line) line-num start
+             {:open-delim *open-delim*}))))
 
 (defn- parse* [parser]
   (loop []
@@ -289,11 +302,14 @@
           (do (emit parser line)
               (recur))
           (when (:section parser)
-            (let [line (some-> prev-line strip-newline)]
+            (let [line (some-> prev-line strip-newline)
+                  expected (stringify-keys (:section parser))]
               (error :missing-section-end
                      (str "Missing section-end tag " *open-delim* "/"
-                          (stringify-keys (:section parser)) *close-delim*)
-                     line prev-line-num (count line)))))))))
+                          expected *close-delim*)
+                     line prev-line-num (count line)
+                     {:open-delim *open-delim* :close-delim *close-delim*
+                      :expected expected}))))))))
 
 (defn parse
   ([in out] (parse in out {}))
