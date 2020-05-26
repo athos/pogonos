@@ -322,6 +322,6 @@
              error/*source* source
              error/*show-error-details* show-error-details]
      (let [parser (-> (make-parser in out)
-                      (cond-> indent (assoc :indent indent))
+                      (assoc :indent indent)
                       (enable-indent-insertion))]
        (parse* parser)))))
