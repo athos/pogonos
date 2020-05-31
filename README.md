@@ -1,6 +1,7 @@
 # Pogonos
 [![Clojars Project](https://img.shields.io/clojars/v/pogonos.svg)](https://clojars.org/pogonos)
 ![build](https://github.com/athos/pogonos/workflows/build/badge.svg)
+[![codecov](https://codecov.io/gh/athos/pogonos/branch/master/graph/badge.svg)](https://codecov.io/gh/athos/pogonos)
 
 Pogonos is another Clojure implementation of Mustache template engine.
 
