@@ -32,6 +32,4 @@
 
   1| Hello, {{name}!
                     ^^\n"
-             (with-out-str
-               (binding [*err* *out*]
-                 (pg/perr t))))))))
+             (with-out-str (pg/perr t)))))))
