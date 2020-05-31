@@ -37,7 +37,7 @@ jobs:
         path: .cpcache
         key: ${{ runner.os }}-cpcache-${{ hashFiles('deps.edn') }}
     - name: Install deps
-      run: clojure -Rcheck:test -Stree
+      run: clojure -Rcheck:test:coverage -Stree
     - name: Run tests
       run: clojure -Atest
     - name: Measure test coverage
