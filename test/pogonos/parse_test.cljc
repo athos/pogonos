@@ -194,7 +194,7 @@
       (is (= ["   " (nodes/->Partial :foo "   ")] result))
       (is (= {:post "  "} (meta partial))))
     (let [[_ partial :as result] (parse "   {{>foo}}  " {:indent "    "})]
-      (is (= ["   " (nodes/->Partial :foo "       ")]))
+      (is (= ["   " (nodes/->Partial :foo "       ")] result))
       (is (= {:post "  "} (meta partial))))
     (let [[_ partial :as result] (parse "abc  {{>foo}}  xyz" {:indent "    "})]
       (is (= ["abc  " (nodes/->Partial :foo nil) "  xyz"] result))

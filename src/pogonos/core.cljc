@@ -7,7 +7,7 @@
             #?(:clj [pogonos.partials :as partials])
             [pogonos.reader :as reader]
             [pogonos.render :as render])
-  #?(:clj (:import [java.io Closeable File FileNotFoundException])))
+  #?(:clj (:import [java.io Closeable FileNotFoundException])))
 
 (def ^:private default-options (atom nil))
 
@@ -103,7 +103,7 @@
    (defn render-file
      ([file data]
       (render-file file data {}))
-     ([file data {:keys [partials] :as opts}]
+     ([file data opts]
       (let [f (io/as-file file)]
         (if (.exists f)
           (let [opts (-> opts

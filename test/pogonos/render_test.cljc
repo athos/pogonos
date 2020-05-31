@@ -1,6 +1,6 @@
 (ns pogonos.render-test
   (:require [clojure.string :as str]
-            [clojure.test :refer [deftest is are testing]]
+            [clojure.test :refer [deftest are testing]]
             [pogonos.render :as render]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]))

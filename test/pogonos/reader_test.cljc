@@ -1,6 +1,5 @@
 (ns pogonos.reader-test
-  (:require #?(:clj [clojure.java.io :as io])
-            [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader])
   #?(:clj (:import [java.io Closeable File])))

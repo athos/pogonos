@@ -1,5 +1,5 @@
 (ns pogonos.stringify-test
-  (:require [clojure.test :refer [deftest is are testing]]
+  (:require [clojure.test :refer [deftest are testing]]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]
             [pogonos.stringify :as stringify]))

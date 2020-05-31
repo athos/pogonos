@@ -1,6 +1,5 @@
 (ns pogonos.render
-  (:require [clojure.string :as str]
-            #?(:cljs [goog.string :as gstr])
+  (:require #?(:cljs [goog.string :as gstr])
             [pogonos.nodes :as nodes]
             [pogonos.parse :as parse]
             [pogonos.partials :as partials]
