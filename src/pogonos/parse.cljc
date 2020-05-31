@@ -190,17 +190,23 @@
                 :expected expected :actual actual})))))
 
 (defn- parse-partial [parser pre start]
-  (let [name (extract-tag-content parser)
-        standalone? (standalone? parser pre start)
-        post (when standalone? (not-empty (read-line parser)))
-        indent (when standalone?
-                 ;; if standalone, append current indent to previous one
-                 ;; otherwise, ignore both current and previous indents
-                 (not-empty (str (:indent parser) pre)))]
-    (emit parser (not-empty pre))
-    (-> (nodes/->Partial (keyword nil (pstr/trim name)) indent)
-        (cond-> post (with-meta {:post post}))
-        ((:out parser)))))
+  (let [name (pstr/trim (extract-tag-content parser))]
+    (if (str/blank? name)
+      (error :invalid-partial
+             (str "Invalid partial \"" name "\"")
+             (strip-newline (current-line parser))
+             (line-num parser)
+             (+ start (count *open-delim*) 1))
+      (let [standalone? (standalone? parser pre start)
+            post (when standalone? (not-empty (read-line parser)))
+            indent (when standalone?
+                     ;; if standalone, append current indent to previous one
+                     ;; otherwise, ignore both current and previous indents
+                     (not-empty (str (:indent parser) pre)))]
+        (emit parser (not-empty pre))
+        (-> (nodes/->Partial (keyword nil name) indent)
+            (cond-> post (with-meta {:post post}))
+            ((:out parser)))))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (read-until parser *close-delim*)]
