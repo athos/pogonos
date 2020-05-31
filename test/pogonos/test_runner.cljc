@@ -5,6 +5,7 @@
             pogonos.parse-test
             pogonos.partials-test
             pogonos.reader-test
+            pogonos.render-test
             pogonos.stringify-test))
 
 (defn -main []
@@ -13,4 +14,5 @@
                'pogonos.parse-test
                'pogonos.partials-test
                'pogonos.reader-test
+               'pogonos.render-test
                'pogonos.stringify-test))
