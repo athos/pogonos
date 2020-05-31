@@ -51,7 +51,7 @@
       "  {{{x}}}  " ["  " (nodes/->UnescapedVariable [:x]) "  "]
       "  {{{x}}}\n" ["  " (nodes/->UnescapedVariable [:x]) "\n"]
       "foo {{{x}}} bar" ["foo " (nodes/->UnescapedVariable [:x]) " bar"])
-    (are [input] (thrown? Exception (parse input))
+    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
       "{{foo"
       "{{}}"
       "{{{}}"))
@@ -155,7 +155,7 @@
              result))
       (is (= {:pre "  " :post " \n"} (meta section)))
       (is (= {:pre " " :post "  \n"} (meta (second (:nodes section))))))
-    (are [input] (thrown? Exception (parse input))
+    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
       "{{#foo"
       "{{#foo}"
       "{{#foo}}"
@@ -182,7 +182,7 @@
     (let [[_ comment :as result] (parse "abc \n  {{! foo\nbar\nbaz }}  \nxyz\n")]
       (is (= ["abc \n" (nodes/->Comment [" foo\n" "bar\n" "baz "]) "xyz\n"] result))
       (is (= {:pre "  " :post "  \n"} (meta comment))))
-    (is (thrown? Exception (parse "{{! comment"))))
+    (is (thrown? #?(:clj Exception :cljs :default) (parse "{{! comment"))))
   (testing "partials"
     (are [input expected] (= expected (parse input))
       "{{>foo}}" [(nodes/->Partial :foo nil)]
@@ -199,7 +199,7 @@
     (let [[_ partial :as result] (parse "abc  {{>foo}}  xyz" {:indent "    "})]
       (is (= ["abc  " (nodes/->Partial :foo nil) "  xyz"] result))
       (is (nil? (meta partial))))
-    (are [input] (thrown? Exception (parse input))
+    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
       "{{>partial"
       "{{>}}"))
   (testing "set delimiters"
@@ -225,7 +225,7 @@
         [(nodes/->SetDelimiter "<<" ">>")
          (nodes/->SectionEnd [:foo])])
        (nodes/->Variable [:bar] false)])
-    (are [input] (thrown? Exception (parse input))
+    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
       "{{="
       "{{=}}"
       "{{==}}"

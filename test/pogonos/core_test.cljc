@@ -1,6 +1,6 @@
 (ns pogonos.core-test
   (:require [clojure.test :refer [deftest is]]
-            [clojure.java.io :as io]
+            #?(:clj [clojure.java.io :as io])
             [pogonos.core :as pg]))
 
 (def ^:private demo-file "templates/demo.mustache")
@@ -12,22 +12,24 @@
            {:name "blue", :link true, :url "#Blue"}]
    :empty false})
 
-(deftest parse-test
-  (is (= (pg/parse-string (slurp (io/resource demo-file)))
-         (pg/parse-file (io/as-file (io/resource demo-file)))
-         (pg/parse-resource demo-file))))
+#?(:clj
+   (deftest parse-test
+     (is (= (pg/parse-string (slurp (io/resource demo-file)))
+            (pg/parse-file (io/as-file (io/resource demo-file)))
+            (pg/parse-resource demo-file)))))
 
-(deftest render-test
-  (is (= (pg/render (pg/parse-resource demo-file) data)
-         (pg/render-string (slurp (io/resource demo-file)) data)
-         (pg/render-file (io/as-file (io/resource demo-file)) data)
-         (pg/render-resource demo-file data))))
+#?(:clj
+   (deftest render-test
+     (is (= (pg/render (pg/parse-resource demo-file) data)
+            (pg/render-string (slurp (io/resource demo-file)) data)
+            (pg/render-file (io/as-file (io/resource demo-file)) data)
+            (pg/render-resource demo-file data)))))
 
 (deftest perr-test
   (try
     (pg/render-string "Hello, {{name}!" {:name "Clojure"})
     (throw (ex-info "NOT REACHED" {}))
-    (catch Throwable t
+    (catch #?(:clj Throwable :cljs :default) t
       (is (= "Missing closing delimiter \"}}\" (1:16):
 
   1| Hello, {{name}!
