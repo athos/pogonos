@@ -40,3 +40,7 @@ jobs:
       run: clojure -Rcheck:test -Stree
     - name: Run tests
       run: clojure -Atest
+    - name: Measure test coverage
+      run: clojure -Atest:coverage
+    - name: Upload coverage report to CodeCov
+      uses: codecov/codecov-action@v1
