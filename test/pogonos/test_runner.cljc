@@ -1,6 +1,7 @@
 (ns pogonos.test-runner
   (:require [clojure.test :as t]
             pogonos.spec-test
+            pogonos.core-test
             pogonos.output-test
             pogonos.parse-test
             pogonos.partials-test
@@ -10,6 +11,7 @@
 
 (defn -main []
   (t/run-tests 'pogonos.spec-test
+               'pogonos.core-test
                'pogonos.output-test
                'pogonos.parse-test
                'pogonos.partials-test
