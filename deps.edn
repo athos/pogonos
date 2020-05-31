@@ -13,7 +13,7 @@
            {:extra-deps {cloverage {:mvn/version "1.1.2"}}
             :main-opts ["-m" "cloverage.coverage"
                         "-p" "src" "-s" "test" "--codecov"
-                        "-e" "pogonos.read"]}
+                        "-e" "pogonos.reader"]}
            :cljs
            {:extra-deps
             {org.clojure/clojurescript {:mvn/version "1.10.597"}}}
