@@ -29,7 +29,11 @@ Add the following to your project's `:dependencies`:
 
 ## Usage
 
+We will show you how to use Pogonos in this section, but if you're not too familiar with the Mustache language itself, you might want to read its [documentation](http://mustache.github.io/) first.
+
 ### Fundamentals
+
+The easiest way to use the library is to just call `render-string`:
 
 ```clojure
 (require '[pogonos.core :as pg])
@@ -37,6 +41,15 @@ Add the following to your project's `:dependencies`:
 (pg/render-string "Hello, {{name}}!" {:name "Rich"})
 ;=> "Hello, Rich!"
 ```
+
+`render-string` takes two arguments; a string that represents a Mustache template,
+and a map of the values that are referenced in the template.
+The keys of the map must be keywords.
+
+The function, then, will render the template and return the resulting string.
+If you'd rather write out the resulting content somewhere instead of generating a string,
+you can use *outputs* to specify where to output the result.
+See [Outputs](#outputs) for the details.
 
 ```clojure
 ;; load a template from a file
