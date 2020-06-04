@@ -43,18 +43,40 @@ The easiest way to use the library is to just call `render-string`:
 ```
 
 `render-string` takes two arguments; a string that represents a Mustache template,
-and a map of the values that are referenced in the template.
+and a map of the values passed to the template.
 The keys of the map must be keywords.
 
 The function, then, will render the template and return the resulting string.
-If you'd rather write out the resulting content somewhere instead of generating a string,
-you can use *outputs* to specify where to output the result.
+If you'd rather write out the resulting content to somewhere, instead of
+generating a string, you can use *outputs* to specify where to output the result.
 See [Outputs](#outputs) for the details.
 
-```clojure
-;; load a template from a file
-(pg/render-file "sample.mustache" {:name "Rich"})
+`render-string` has look-alike cousins named `render-file` and `render-resource`.
+The only difference between `render-string` and these is that `render-string`
+directly takes a template string as an argument whereas `render-file` and
+`render-resource` load a template stored in a text file on the file system
+or a resource file placed somewhere on the classpath.
 
+Let's say you have a template file located at `resources/sample.mustache`
+whose content looks like the following:
+
+```sh
+$ cat resources/sample.mustache
+Hello, {{name}}!
+```
+
+Then, you can render the template using `render-file`:
+
+```clojure
+;; load a template from a text file on the file system
+(pg/render-file "resources/sample.mustache" {:name "Rich"})
+```
+
+Or if you have the template file on your classpath, you can also render it
+with `render-resource` (Here we assume the `resources` directory is
+included in the classpath):
+
+```clojure
 ;; load a template from a resource file on the classpath
 (pg/render-resource "sample.mustache" {:name "Rich"})
 ```
