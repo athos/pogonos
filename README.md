@@ -151,7 +151,44 @@ out to the file.
 
 ### Errors
 
-(TODO)
+Pogonos aims to provide user-friendly error messages for parse errors
+as one of its features, so that users can easily find where and why
+that error occurred.
+
+For example, if you miss the close delimiter of a Mustache tag, you'll
+see an error message like the following shows up:
+
+```clojure
+(pg/render-string "Hello, {{name" {:name "Clojure"})
+
+;; Execution error (ExceptionInfo) at pogonos.error/error (error.cljc:52).
+;; Missing closing delimiter "}}" (1:14):
+;;
+;;   1| Hello, {{name
+;;                   ^^
+```
+
+You can opt out this somewhat "verbose" error message if you want,
+by specifying the option `{:show-error-details false}`:
+
+```clojure
+(pg/render-string "Hello, {{name" {:name "Clojure"}
+                  {:show-error-details false})
+
+;; Execution error (ExceptionInfo) at pogonos.error/error (error.cljc:52).
+;; Missing closing delimiter "}}" (1:14)
+```
+
+Even when disabling verbose error messages, you can get back the detailed
+message by calling `perr` explicitly:
+
+```clojure
+(pg/perr *e)
+;; Missing closing delimiter "}}" (1:14):
+;;
+;;   1| Hello, {{name
+;;                   ^^
+```
 
 ## License
 
