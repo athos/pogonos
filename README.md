@@ -107,17 +107,34 @@ And then, you can render the parsed template using the `render` function:
 
 ### Outputs
 
+An output is the way to specify where to output the rendering result.
+By default, Pogonos' render functions output the result as a string.
+You can emulate this behavior by specifying `(pogonos.output/to-string)`
+to them as the output like the following:
+
 ```clojure
 (require '[pogonos.output :as output])
 
-;; Prints the rendered result to stdout
-(pg/render-string "Hello, {{name}}" {:name "Rich"}
-                  {:output (output/to-stdout)})
-
-;; Writes the rendered result to a file
-(pg/render-string "Hello, {{name}}" {:name "Rich"}
-                  {:output (output/to-file "result.txt")})
+(pg/render-string "Hello, {{name}}!" {:name "Clojure"}
+                  {:output (output/to-string)})
+;=> "Hello, Clojure!"
 ```
+
+You can also write out the rendering result to a file or the stdout via output:
+
+```clojure
+;; Writes the rendering result to a file
+(pg/render-string "Hello, {{name}}!" {:name "Clojure"}
+                  {:output (output/to-file "hello.txt")})
+
+;; Writes the rendering result to the stdout
+(pg/render-string "Hello, {{name}}!" {:name "Clojure"}
+                  {:output (output/to-stdout)})
+```
+
+In general, it's more efficient to write out the rendering result
+directly to a file than to generate a resulting string, and then write it
+out to the file.
 
 ### Partials
 
