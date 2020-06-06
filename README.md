@@ -81,10 +81,26 @@ included in the classpath):
 (pg/render-resource "sample.mustache" {:name "Rich"})
 ```
 
+All the render functions mentioned above are more suitable for one-shot
+rendering. If you want to render the same template with different contexts
+over and over again, it would be more efficient to prepare a parsed template
+prior to rendering.
+
+To prepare a parsed template, use `parse-string` (or `parse-file` / `parse-resource`
+accordingly):
+
 ```clojure
 (def template (pg/parse-string "Hello, {{name}}!"))
+template
+;=> #pogonos.nodes.Root{:body ["Hello, " #pogonos.nodes.Variable{:keys (:name), :unescaped? false} "!"]}
+```
+
+And then, you can render the parsed template using the `render` function:
+
+```clojure
 (pg/render template {:name "Rich"})
 ;=> "Hello, Rich!"
+
 (pg/render template {:name "Alex"})
 ;=> "Hello, Alex!"
 ```
