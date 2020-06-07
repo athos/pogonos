@@ -3,14 +3,14 @@
 ![build](https://github.com/athos/pogonos/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/athos/pogonos/branch/master/graph/badge.svg)](https://codecov.io/gh/athos/pogonos)
 
-Pogonos is another Clojure implementation of the [Mustache](http://mustache.github.io/) templating language.
+Pogonos is another Clojure(Script) implementation of the [Mustache](http://mustache.github.io/) templating language.
 
 ## Features
 
 - Completely compliant to the [Mustache spec](https://github.com/mustache/spec), including lambdas
 - Fast, but clean implementation
 - User-friendly error messages for parsing errors
-- Supporting all of Clojure, ClojureScript and self-hosted ClojureScript
+- Supports all of Clojure, ClojureScript and self-hosted ClojureScript
 
 ## Table of Contents
 
@@ -68,7 +68,7 @@ Hello, {{name}}!
 Then, you can render the template using `render-file`:
 
 ```clojure
-;; load a template from a text file on the file system
+;; loads a template from a text file on the file system
 (pg/render-file "resources/sample.mustache" {:name "Rich"})
 ```
 
@@ -77,7 +77,7 @@ with `render-resource` (Here we assume the `resources` directory is
 included in the classpath):
 
 ```clojure
-;; load a template from a resource file on the classpath
+;; loads a template from a resource file on the classpath
 (pg/render-resource "sample.mustache" {:name "Rich"})
 ```
 
@@ -129,11 +129,11 @@ to them as the output like the following:
 You can also write out the rendering result to a file or the stdout via output:
 
 ```clojure
-;; Writes the rendering result to a file
+;; writes the rendering result to a file
 (pg/render-string "Hello, {{name}}!" {:name "Clojure"}
                   {:output (output/to-file "hello.txt")})
 
-;; Writes the rendering result to the stdout
+;; writes the rendering result to the stdout
 (pg/render-string "Hello, {{name}}!" {:name "Clojure"}
                   {:output (output/to-stdout)})
 ```
@@ -194,7 +194,7 @@ as one of its features, so that users can easily find where and why
 the error occurred.
 
 For example, if you miss the closing delimiter of a Mustache tag, you'll
-see an error message like the following shows up:
+see an error message like the following:
 
 ```clojure
 (pg/render-string "Hello, {{name" {:name "Clojure"})
