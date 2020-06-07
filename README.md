@@ -144,10 +144,47 @@ out to the file.
 
 ### Partials
 
+The Mustache spec provides a feature named [partials](http://mustache.github.io/mustache.5.html#Partials). Partials can be used to include contents from other templates.
+
+Let's say you have a partial `resources/user.mustache` that looks like:
+
+```sh
+$ cat resources/user.mustache
+<strong>{{name}}</strong>
+```
+
+You can render a template that has a partial in it using the render
+functions out of the box:
+
 ```clojure
-(pg/render-string "{{>node}}" {:content "X" :nodes [{:content "Y" :nodes []}]}
-                  {:partials {:node "{{content}}<{{#nodes}}{{>node}}{{/nodes}}>"}})
-;=> "X<Y<>>"
+(pg/render-string "<h2>Users</h2>{{#users}}{{>user}}{{/users}}"
+                  {:users [{:name "Rich"} {:name "Alex"}]})
+;=> "<h2>Users</h2><strong>Rich</strong><strong>Alex</strong>"
+```
+
+By default, `render-string` and `render-resource` try to find
+partials on the classpath, and `render-file` on the file system.
+
+To specify where to find partials explicitly, use the `:partials` option:
+
+```clojure
+(require '[pogonos.partials :as partials])
+
+(pg/render-string "<h2>Users</h2>{{#users}}{{>user}}{{/users}}"
+                  {:users [{:name "Rich"} {:name "Alex"}]}
+                  {:partials (partials/file-partials "resources")})
+
+(pg/render-string "<h2>Users</h2>{{#users}}{{>user}}{{/users}}"
+                  {:users [{:name "Rich"} {:name "Alex"}]}
+                  {:partials (partials/resource-partials)})
+```
+
+You can even specify a map to utilize *inline* partials:
+
+```clojure
+(pg/render-string "<h2>Users</h2>{{#users}}{{>user}}{{/users}}"
+                  {:users [{:name "Rich"} {:name "Alex"}]}
+                  {:partials {:user "<strong>{{name}}</strong>"}}
 ```
 
 ### Error messages
