@@ -19,7 +19,7 @@ Pogonos is another Clojure implementation of the [Mustache](http://mustache.gith
   - [Fundamentals](#fundamentals)
   - [Outputs](#outputs)
   - [Partials](#partials)
-  - [Errors](#errors)
+  - [Error messages](#error-messages)
 
 ## Installation
 
