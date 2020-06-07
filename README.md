@@ -47,12 +47,12 @@ and a map of the values passed to the template.
 The keys of the map must be keywords.
 
 The function, then, will render the template and return the resulting string.
-If you'd rather write out the resulting content to somewhere, instead of
+If you'd rather write out the rendering result to somewhere, instead of
 generating a string, you can use *outputs* to specify where to output the result.
 See [Outputs](#outputs) for the details.
 
 `render-string` has look-alike cousins named `render-file` and `render-resource`.
-The only difference between `render-string` and these is that `render-string`
+The only difference between `render-string` and those functions is that `render-string`
 directly takes a template string as an argument whereas `render-file` and
 `render-resource` load a template stored in a text file on the file system
 or a resource file placed somewhere on the classpath.
@@ -82,8 +82,8 @@ included in the classpath):
 ```
 
 All the render functions mentioned above are more suitable for one-shot
-rendering. If you want to render the same template with different contexts
-over and over again, it would be more efficient to prepare a parsed template
+rendering. But if you want to render the same template with different contexts
+over and over again, it would be more efficient to prepare a *parsed template*
 prior to rendering.
 
 To prepare a parsed template, use `parse-string` (or `parse-file` / `parse-resource`
@@ -91,6 +91,7 @@ accordingly):
 
 ```clojure
 (def template (pg/parse-string "Hello, {{name}}!"))
+
 template
 ;=> #pogonos.nodes.Root{:body ["Hello, " #pogonos.nodes.Variable{:keys (:name), :unescaped? false} "!"]}
 ```
@@ -106,8 +107,8 @@ And then, you can render the parsed template using the `render` function:
 ```
 
 At the time, Pogonos does not have an internal mechanism to implicitly cache
-parsing results for templates you've ever rendered for better performance
-of rendering. So, if you use Pogonos in a situation where the rendering performance
+parsing results for templates you've ever rendered, for better performance
+of rendering. So, if you use Pogonos in a case where the rendering performance
 matters much, you may have to cache parsed templates on your own.
 
 ### Outputs
@@ -149,13 +150,13 @@ out to the file.
 ;=> "X<Y<>>"
 ```
 
-### Errors
+### Error messages
 
 Pogonos aims to provide user-friendly error messages for parse errors
 as one of its features, so that users can easily find where and why
-that error occurred.
+the error occurred.
 
-For example, if you miss the close delimiter of a Mustache tag, you'll
+For example, if you miss the closing delimiter of a Mustache tag, you'll
 see an error message like the following shows up:
 
 ```clojure
@@ -179,7 +180,7 @@ by specifying the option `{:show-error-details false}`:
 ;; Missing closing delimiter "}}" (1:14)
 ```
 
-Even when disabling verbose error messages, you can get back the detailed
+Even while disabling verbose error messages, you can get back the detailed
 message by calling `perr` explicitly:
 
 ```clojure
