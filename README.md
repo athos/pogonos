@@ -106,10 +106,10 @@ And then, you can render the parsed template using the `render` function:
 ;=> "Hello, Alex!"
 ```
 
-At the time, Pogonos does not have an internal mechanism to implicitly cache
+At the time, Pogonos does NOT have an internal mechanism to implicitly cache
 parsing results for templates you've ever rendered, for better performance
-of rendering. So, if you use Pogonos in a case where the rendering performance
-matters much, you may have to cache parsed templates on your own.
+of rendering. So, if you're trying to use Pogonos where the rendering
+performance matters much, you may have to cache parsed templates on your own.
 
 ### Outputs
 
