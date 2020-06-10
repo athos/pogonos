@@ -194,7 +194,7 @@ as one of its features, so that users can easily find where and why
 the error occurred.
 
 For example, if you miss the closing delimiter of a Mustache tag, you'll
-see an error message like the following:
+see a detailed error message, like the following:
 
 ```clojure
 (pg/render-string "Hello, {{name" {:name "Clojure"})
@@ -206,19 +206,19 @@ see an error message like the following:
 ;;                   ^^
 ```
 
-You can opt out this somewhat "verbose" error message if you want,
-by specifying the option `{:show-error-details false}`:
+You can suppress these somewhat "verbose" error messages if you want,
+by specifying the option `{:suppress-verbose-errors true}`:
 
 ```clojure
 (pg/render-string "Hello, {{name" {:name "Clojure"}
-                  {:show-error-details false})
+                  {:suppress-verbose-errors true})
 
 ;; Execution error (ExceptionInfo) at pogonos.error/error (error.cljc:52).
 ;; Missing closing delimiter "}}" (1:14)
 ```
 
-Even while disabling verbose error messages, you can get back the detailed
-message by calling `perr` explicitly:
+Even while disabling verbose error messages, you can get them back by calling
+`perr` explicitly:
 
 ```clojure
 (pg/perr *e)
