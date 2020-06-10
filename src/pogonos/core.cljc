@@ -130,5 +130,5 @@
    (perr *e))
   ([err]
    (let [data (ex-data err)]
-     (binding [error/*show-error-details* true]
+     (binding [error/*suppress-verbose-errors* false]
        (println (error/stringify-error (:message data) data))))))

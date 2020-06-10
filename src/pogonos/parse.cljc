@@ -321,12 +321,12 @@
 (defn parse
   ([in out] (parse in out {}))
   ([in out
-    {:keys [source show-error-details open-delim close-delim indent]
-     :or {show-error-details true}}]
+    {:keys [source suppress-verbose-errors open-delim close-delim indent]
+     :or {suppress-verbose-errors false}}]
    (binding [*open-delim* (or open-delim default-open-delim)
              *close-delim* (or close-delim default-close-delim)
              error/*source* source
-             error/*show-error-details* show-error-details]
+             error/*suppress-verbose-errors* suppress-verbose-errors]
      (let [parser (-> (make-parser in out)
                       (assoc :indent indent)
                       (enable-indent-insertion))]
