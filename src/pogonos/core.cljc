@@ -43,6 +43,12 @@
        {:options opts}))))
 
 (defn parse-string
+  "Parses the given template string and returns the parsed template.
+
+  Optionally takes an option map. The option map may have the following keys:
+
+  - :suppress-verbose-errors  If set to true, suppress verbose error messages.
+                              Defaults to false."
   ([s]
    (parse-string s {}))
   ([s opts]
@@ -50,6 +56,10 @@
 
 #?(:clj
    (defn parse-file
+     "Takes a file name that contains a Mustache template, and parses the template.
+
+  Optionally takes an option map. See the docstring of `parse-string` for
+  the available options."
      ([file]
       (parse-file file {}))
      ([file opts]
@@ -62,6 +72,10 @@
 
 #?(:clj
    (defn parse-resource
+     "Takes a resource name that contains a Mustache template, and parses the template.
+
+  Optionally takes an option map. See the docstring of `parse-string` for
+  the available options."
      ([res]
       (parse-resource res {}))
      ([res opts]
@@ -72,6 +86,16 @@
         (throw (FileNotFoundException. res))))))
 
 (defn render
+  "Takes a parsed template (generated from parse-* functions)
+  and a context map, and renders the template.
+
+  Optionally takes an option map. The option map may have the following keys:
+
+  - :output    Specify where to output the rendering result. Defaults to
+               pogonos.output/to-string (i.e. generating a string).
+  - :partials  Specify where to look for partials. Either a map or a partials
+               resolver (see pogonos.partials) can be specified. Defaults to
+               pogonos.partials/resource-partials."
   ([template data]
    (render template data {}))
   ([template data opts]
@@ -94,6 +118,10 @@
      (out))))
 
 (defn render-string
+  "Takes a Mustache template string and a context map, and renders the template.
+
+  Optionally takes an option map. See the docstring of `parse-string` and `render`
+  for the available options."
   ([s data]
    (render-string s data {}))
   ([s data opts]
@@ -101,6 +129,10 @@
 
 #?(:clj
    (defn render-file
+     "Takes a file name that contains a Mustache template, and renders the template.
+
+  Optionally takes an option map. See the docstring of `parse-string` and `render`
+  for the available options."
      ([file data]
       (render-file file data {}))
      ([file data opts]
@@ -115,6 +147,10 @@
 
 #?(:clj
    (defn render-resource
+     "Takes a resource name that contains a Mustache template, and renders the template.
+
+  Optionally takes an option map. See the docstring of `parse-string` and `render`
+  for the available options."
      ([res data]
       (render-resource res data {}))
      ([res data opts]
@@ -126,6 +162,8 @@
         (throw (FileNotFoundException. res))))))
 
 (defn perr
+  "Prints detailed error message. The argument `err` must be a parse-time exception
+  thrown in render or parse functions. Otherwise, nothing will be displayed."
   ([]
    (perr *e))
   ([err]
