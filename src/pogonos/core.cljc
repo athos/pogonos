@@ -130,5 +130,6 @@
    (perr *e))
   ([err]
    (let [data (ex-data err)]
-     (binding [error/*suppress-verbose-errors* false]
-       (println (error/stringify-error (:message data) data))))))
+     (when-let [message (::error/message data)]
+       (binding [error/*suppress-verbose-errors* false]
+         (println (error/stringify-error message data)))))))

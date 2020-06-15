@@ -3,10 +3,10 @@
 (def ^:dynamic *suppress-verbose-errors* false)
 (def ^:dynamic *source* nil)
 
-(defn- has-error-details? [{:keys [error-line line column]}]
+(defn- has-error-details? [{::keys [error-line line column]}]
   (and error-line line column))
 
-(defn- print-error-message [msg {:keys [line column] :as ex-data}]
+(defn- print-error-message [msg {::keys [line column] :as ex-data}]
   (print msg)
   (when (has-error-details? ex-data)
     (print " (")
@@ -20,7 +20,7 @@
     (when-not *suppress-verbose-errors*
       (println \:))))
 
-(defn- print-detailed-error-info [{:keys [error-line line column]}]
+(defn- print-detailed-error-info [{::keys [error-line line column]}]
   (print "\n  ")
   (print line)
   (print "| ")
@@ -43,10 +43,10 @@
   ([type msg line line-num col-num]
    (error type msg line line-num col-num {}))
   ([type msg line line-num col-num data]
-   (let [ex-data (cond-> (assoc data :type type :message msg)
-                   *source* (assoc :source *source*)
-                   line (assoc :error-line line)
-                   line-num (assoc :line (some-> line-num inc))
-                   col-num (assoc :column (some-> col-num inc)))
+   (let [ex-data (cond-> (assoc data ::type type ::message msg)
+                   *source* (assoc ::source *source*)
+                   line (assoc ::error-line line)
+                   line-num (assoc ::line (some-> line-num inc))
+                   col-num (assoc ::column (some-> col-num inc)))
          msg' (stringify-error msg ex-data)]
      (throw (ex-info msg' ex-data)))))
