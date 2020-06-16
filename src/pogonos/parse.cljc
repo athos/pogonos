@@ -64,10 +64,11 @@
    (let [name (pstr/trim s)
          keys (str/split name #"\.")]
      (if (some (fn [k] (or (str/blank? k) (pstr/index-of k " " 0))) keys)
-       (error :invalid-variable
+       (error :invalid-variable-name
               (str "Invalid variable \"" name "\"")
               (current-line parser) (line-num parser)
-              (- (col-num parser) (count (str/triml s)) (count close-delim)))
+              (- (col-num parser) (count (str/triml s)) (count close-delim))
+              {:variable-name name})
        (apply list (map keyword keys))))))
 
 (defn- stringify-keys [keys]
@@ -83,16 +84,16 @@
          col-num (col-num parser)]
      (if-let [content (read-until parser close-delim)]
        (if-let [i (pstr/index-of content *open-delim* 0)]
-         (error :missing-close-delim
+         (error :missing-closing-delimiter
                 (str "Missing closing delimiter \"" close-delim "\"")
                 (strip-newline line) line-num (+ col-num (dec i))
-                {:close-delim close-delim})
+                {:closing-delimiter close-delim})
          content)
        (let [line (strip-newline line)]
-         (error :missing-close-delim
+         (error :missing-closing-delimiter
                 (str "Missing closing delimiter \"" close-delim "\"")
                 line line-num (count line)
-                {:close-delim close-delim}))))))
+                {:closing-delimiter close-delim}))))))
 
 (defn- parse-variable [parser pre unescaped?]
   (emit parser pre)
@@ -180,23 +181,24 @@
               ((:out parser)))))
       (let [expected (stringify-keys (:section parser))
             actual (stringify-keys keys)]
-        (error :inconsistent-section-end
+        (error :mismatched-section-end
                (str "Expected "
                     *open-delim* "/" expected *close-delim*
                     " tag, but got "
                     *open-delim* "/" actual *close-delim*)
                (current-line parser) (line-num parser) start
-               {:open-delim *open-delim* :close-delim *close-delim*
+               {:opening-delimiter *open-delim* :closing-delimiter *close-delim*
                 :expected expected :actual actual})))))
 
 (defn- parse-partial [parser pre start]
   (let [name (pstr/trim (extract-tag-content parser))]
     (if (str/blank? name)
-      (error :invalid-partial
+      (error :invalid-partial-name
              (str "Invalid partial \"" name "\"")
              (strip-newline (current-line parser))
              (line-num parser)
-             (+ start (count *open-delim*) 1))
+             (+ start (count *open-delim*) 1)
+             {:partial-name name})
       (let [standalone? (standalone? parser pre start)
             post (when standalone? (not-empty (read-line parser)))
             indent (when standalone?
@@ -231,11 +233,11 @@
             (if-let [line (read-line parser)]
               (recur (conj acc line))
               (let [line (strip-newline prev-line)]
-                (error :missing-close-delim
+                (error :missing-closing-delimiter
                        (str "Missing closing delimiter \"" *close-delim* "\""
                             " for comment tag")
                        line prev-line-num (count line)
-                       {:close-delim *close-delim*})))))))))
+                       {:closing-delimiter *close-delim*})))))))))
 
 (defn- parse-set-delimiters [parser pre start]
   (let [line (current-line parser)
@@ -249,8 +251,8 @@
                  (str "Invalid set delimiters tag "
                       *open-delim* \= delims \= *close-delim*)
                  line line-num start
-                 {:open-delim *open-delim* :close-delim *close-delim*
-                  :delims delims}))
+                 {:opening-delimiter *open-delim* :closing-delimiter *close-delim*
+                  :delimiters delims}))
         (set! *open-delim* open)
         (set! *close-delim* close)
         (with-surrounding-whitespaces-processed parser pre start
@@ -262,8 +264,8 @@
              (str "Invalid set delimiters tag "
                   *open-delim* \= delims \= *close-delim*)
              line line-num start
-             {:open-delim *open-delim* :close-delim *close-delim*
-              :delims delims}))))
+             {:opening-delimiter *open-delim* :closing-delimiter *close-delim*
+              :delimiters delims}))))
 
 (defn- parse-tag [parser pre start]
   (let [line (current-line parser)
@@ -287,14 +289,16 @@
                           (str "Unescaped variable tag \"" *open-delim* "{\" "
                                "cannot be used while changing delimiters")
                           line line-num start
-                          {:open-delim *open-delim*}))
+                          {:opening-delimter *open-delim*
+                           :closing-delimiter *close-delim*}))
               (do (unread-char parser)
                   (parse-variable parser pre false)))
             true))
       (error :incomplete-tag
-             (str "Found incomplete tag \"" *open-delim* "\"")
+             (str "Incomplete tag \"" *open-delim* "\" found")
              (strip-newline line) line-num start
-             {:open-delim *open-delim*}))))
+             {:opening-delimiter *open-delim*
+              :closing-delimiter *close-delim*}))))
 
 (defn- parse* [parser]
   (loop []
@@ -315,7 +319,8 @@
                      (str "Missing section-end tag " *open-delim* "/"
                           expected *close-delim*)
                      line prev-line-num (count line)
-                     {:open-delim *open-delim* :close-delim *close-delim*
+                     {:opening-delimiter *open-delim*
+                      :closing-delimiter *close-delim*
                       :expected expected}))))))))
 
 (defn parse
