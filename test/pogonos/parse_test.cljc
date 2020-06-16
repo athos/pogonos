@@ -1,5 +1,6 @@
 (ns pogonos.parse-test
   (:require [clojure.test :refer [deftest is are testing]]
+            [pogonos.error :as error]
             [pogonos.nodes :as nodes]
             [pogonos.parse :as parse]
             [pogonos.reader :as reader]))
@@ -51,10 +52,17 @@
       "  {{{x}}}  " ["  " (nodes/->UnescapedVariable [:x]) "  "]
       "  {{{x}}}\n" ["  " (nodes/->UnescapedVariable [:x]) "\n"]
       "foo {{{x}}} bar" ["foo " (nodes/->UnescapedVariable [:x]) " bar"])
-    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
-      "{{foo"
-      "{{}}"
-      "{{{}}"))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{" :incomplete-tag
+      "{{foo" :missing-closing-delimiter
+      "{{foo{{}}" :missing-closing-delimiter
+      "{{}}" :invalid-variable-name
+      "{{{}}" :missing-closing-delimiter))
   (testing "sections"
     (are [input expected] (= expected (parse input))
       "abc {{#foo}} lmn {{/foo}} xyz"
@@ -155,12 +163,17 @@
              result))
       (is (= {:pre "  " :post " \n"} (meta section)))
       (is (= {:pre " " :post "  \n"} (meta (second (:nodes section))))))
-    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
-      "{{#foo"
-      "{{#foo}"
-      "{{#foo}}"
-      "{{#foo}}{{/foo}"
-      "{{#foo}}{{/bar}}"))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{#foo" :missing-closing-delimiter
+      "{{#foo}" :missing-closing-delimiter
+      "{{#foo}}" :missing-section-end
+      "{{#foo}}{{/foo}" :missing-closing-delimiter
+      "{{#foo}}{{/bar}}" :mismatched-section-end))
   (testing "comments"
     (are [input expected] (= expected (parse input))
       "{{!}}" [(nodes/->Comment [""])]
@@ -182,7 +195,14 @@
     (let [[_ comment :as result] (parse "abc \n  {{! foo\nbar\nbaz }}  \nxyz\n")]
       (is (= ["abc \n" (nodes/->Comment [" foo\n" "bar\n" "baz "]) "xyz\n"] result))
       (is (= {:pre "  " :post "  \n"} (meta comment))))
-    (is (thrown? #?(:clj Exception :cljs :default) (parse "{{! comment"))))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{! comment" :missing-closing-delimiter
+      "{{! comment\n" :missing-closing-delimiter))
   (testing "partials"
     (are [input expected] (= expected (parse input))
       "{{>foo}}" [(nodes/->Partial :foo nil)]
@@ -199,9 +219,14 @@
     (let [[_ partial :as result] (parse "abc  {{>foo}}  xyz" {:indent "    "})]
       (is (= ["abc  " (nodes/->Partial :foo nil) "  xyz"] result))
       (is (nil? (meta partial))))
-    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
-      "{{>partial"
-      "{{>}}"))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{>partial" :missing-closing-delimiter
+      "{{>}}" :invalid-partial-name))
   (testing "set delimiters"
     (let [[_ node :as result] (parse "abc {{=<% %>=}} <%foo%> xyz")]
       (is (= ["abc " (nodes/->SetDelimiter "<%" "%>")
@@ -225,9 +250,14 @@
         [(nodes/->SetDelimiter "<<" ">>")
          (nodes/->SectionEnd [:foo])])
        (nodes/->Variable [:bar] false)])
-    (are [input] (thrown? #?(:clj Exception :cljs :default) (parse input))
-      "{{="
-      "{{=}}"
-      "{{==}}"
-      "{{= <% =}}"
-      "{{= <% %> }}")))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{=" :missing-closing-delimiter
+      "{{=}}" :missing-closing-delimiter
+      "{{==}}" :invalid-set-delimiters
+      "{{= <% =}}" :invalid-set-delimiters
+      "{{= <% %> }}" :missing-closing-delimiter)))
