@@ -12,6 +12,13 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 - User-friendly error messages for parsing errors
 - Supports all of Clojure, ClojureScript and self-hosted ClojureScript
 
+## Project status
+
+Pogonos is still in beta. The public API provided in the `pogonos.core`
+namespace is almost fixed while any other interfaces, including various
+extension points (such as readers, outputs, AST nodes), are all subject
+to change.
+
 ## Table of Contents
 
 - [Installation](#installation)
