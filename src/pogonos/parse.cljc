@@ -282,15 +282,7 @@
               \> (parse-partial parser pre start)
               \! (parse-comment parser pre start)
               \= (parse-set-delimiters parser pre start)
-              \{ (if (and (= *open-delim* default-open-delim)
-                          (= *close-delim* default-close-delim))
-                   (parse-unescaped-variable parser pre)
-                   (error :invalid-unescaped-variable-tag
-                          (str "Unescaped variable tag \"" *open-delim* "{\" "
-                               "cannot be used while changing delimiters")
-                          line line-num start
-                          {:opening-delimter *open-delim*
-                           :closing-delimiter *close-delim*}))
+              \{ (parse-unescaped-variable parser pre)
               (do (unread-char parser)
                   (parse-variable parser pre false)))
             true))

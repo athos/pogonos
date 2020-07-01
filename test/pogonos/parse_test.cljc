@@ -249,7 +249,15 @@
         [:foo]
         [(nodes/->SetDelimiter "<<" ">>")
          (nodes/->SectionEnd [:foo])])
-       (nodes/->Variable [:bar] false)])
+       (nodes/->Variable [:bar] false)]
+
+      "{{=<% %>=}}{{foo}}"
+      [(nodes/->SetDelimiter "<%" "%>")
+       "{{foo}}"]
+
+      "{{=<% %>=}}{{{foo}}}"
+      [(nodes/->SetDelimiter "<%" "%>")
+       "{{{foo}}}"])
     (are [input error-type] (= error-type
                                (try
                                  (parse input)
