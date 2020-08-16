@@ -4,7 +4,7 @@
             #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]
             [pogonos.strings :as pstr])
-  #?(:clj (:import [java.io Reader Closeable])))
+  #?(:clj (:import [java.io Reader])))
 
 (defn ->reader [x]
   (if (satisfies? proto/IReader x)
@@ -24,7 +24,7 @@
         ret)))
   (close [this]))
 
-(defn make-string-reader [s]
+(defn ^StringReader make-string-reader [s]
   (StringReader. s 0))
 
 (extend-protocol proto/ToReader
@@ -61,12 +61,11 @@
                (do (.append sb buf offset (- size offset))
                    (set! offset size)
                    (recur sb)))))))
-     Closeable
      (close [this]
        (.close reader))))
 
 #?(:clj
-   (defn make-file-reader [file]
+   (defn ^FileReader make-file-reader [file]
      (FileReader. (io/reader file) (char-array 256) 0 0)))
 
 #?(:clj

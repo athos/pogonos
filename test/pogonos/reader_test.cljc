@@ -2,7 +2,9 @@
   (:require [clojure.test :refer [deftest is testing]]
             [pogonos.protocols :as proto]
             [pogonos.reader :as reader])
-  #?(:clj (:import [java.io Closeable File])))
+  #?(:clj
+     (:import [java.io File]
+              [pogonos.reader FileReader])))
 
 (deftest string-reader-test
   (let [r (reader/make-string-reader "")]
@@ -28,7 +30,7 @@
     (is (nil? (proto/read-line r)))))
 
 #?(:clj
-   (defn- ^Closeable make-file-reader [content]
+   (defn- ^FileReader make-file-reader [content]
      (-> (doto (File/createTempFile "tmp" nil)
            (spit content))
          (reader/make-file-reader))))
@@ -57,7 +59,7 @@
        (is (= "baz\n" (proto/read-line r)))
        (is (nil? (proto/read-line r))))))
 
-(defn- ^Closeable make-line-buffering-reader [content]
+(defn- make-line-buffering-reader [content]
   (reader/make-line-buffering-reader (reader/make-string-reader content)))
 
 (deftest line-buffering-reader-test
