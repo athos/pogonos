@@ -24,7 +24,7 @@
         ret)))
   (close [this]))
 
-(defn ^StringReader make-string-reader [s]
+(defn ^pogonos.reader.StringReader make-string-reader [s]
   (StringReader. s 0))
 
 (extend-protocol proto/ToReader
@@ -65,7 +65,7 @@
        (.close reader))))
 
 #?(:clj
-   (defn ^FileReader make-file-reader [file]
+   (defn ^pogonos.reader.FileReader make-file-reader [file]
      (FileReader. (io/reader file) (char-array 256) 0 0)))
 
 #?(:clj
