@@ -1,6 +1,11 @@
 (ns pogonos.nodes)
 
-(defprotocol Invisible)
+(defprotocol IVisibility
+  (visible? [this]))
+
+(extend-protocol IVisibility
+  #?(:clj Object :cljs default)
+  (visible? [thihs] true))
 
 (defrecord Root [body])
 
@@ -17,7 +22,9 @@
 (defrecord Partial [name indent])
 
 (defrecord Comment [body]
-  Invisible)
+  IVisibility
+  (visible? [this] false))
 
 (defrecord SetDelimiter [open close]
-  Invisible)
+  IVisibility
+  (visible? [this] false))
