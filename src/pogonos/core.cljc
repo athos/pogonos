@@ -34,7 +34,7 @@
   ([in opts]
    (let [buf (parse/make-node-buffer)
          out (fn [x]
-               (when-not (satisfies? nodes/Invisible x)
+               (when (nodes/visible? x)
                  (buf x)))
          opts (fixup-options opts #?(:clj partials/resource-partials))]
      (parse/parse in out opts)
