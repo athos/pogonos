@@ -20,7 +20,14 @@
 
 #?(:clj
    (deftest render-test
-     (is (= (pg/render (pg/parse-resource demo-file) data)
+     (is (= "<h1>Colors</h1>
+
+        <li><strong>red</strong></li>
+        <li><a href=\"#Green\">green</a></li>
+        <li><a href=\"#Blue\">blue</a></li>
+
+"
+            (pg/render (pg/parse-resource demo-file) data)
             (pg/render-string (slurp (io/resource demo-file)) data)
             (pg/render-file (io/as-file (io/resource demo-file)) data)
             (pg/render-resource demo-file data)))))
