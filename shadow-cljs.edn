@@ -1,0 +1,5 @@
+{:source-paths ["src" "test" "test-resources"]
+ :builds
+ {:test
+  {:target    :karma
+   :output-to "target/test.js"}}}
