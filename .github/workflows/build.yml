@@ -36,14 +36,31 @@ jobs:
       with:
         path: .cpcache
         key: ${{ runner.os }}-cpcache-${{ hashFiles('deps.edn') }}
+    - name: Cache node modules
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node_modules-${{ hashFiles('package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node_modules-
     - name: Install deps
-      run: clojure -Rcheck:test:cljs:coverage -Stree
+      run: |
+        clojure -Rcheck:test:cljs:coverage -Stree
+        npm install
     - name: Run check
       run: clojure -Acheck
     - name: Run CLJ tests
       run: clojure -Atest
-    - name: Run CLJS tests
+    - name: Run CLJS tests on Node
       run: clojure -Atest:cljs:test-cljs
+    - name: Run CLJS tests on browser
+      run: |
+        npx shadow-cljs compile test
+        npx karma start --single-run
+    - name: Run CLJS tests (advanced build) on browser
+      run: |
+        npx shadow-cljs release test
+        npx karma start --single-run
     - name: Measure test coverage
       run: clojure -Atest:coverage
     - name: Upload coverage report to CodeCov

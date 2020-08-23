@@ -1,12 +1,14 @@
 /target
 /classes
 /checkouts
+/node_modules
 profiles.clj
 pom.xml
 pom.xml.asc
 *.jar
 *.class
 /.cpcache
+/.shadow-cljs
 /.lein-*
 /.nrepl-port
 .hgignore

@@ -14,6 +14,9 @@
             :main-opts ["-m" "cloverage.coverage"
                         "-p" "src" "-s" "test" "--codecov"
                         "-e" "pogonos.reader"]}
+           :shadow-cljs
+           {:extra-deps {thheller/shadow-cljs {:mvn/version "2.10.22"}}
+            :main-opts ["-m" "shadow.cljs.devtools.cli"]}
            :cljs
            {:extra-deps
             {org.clojure/clojurescript {:mvn/version "1.10.597"}}}
