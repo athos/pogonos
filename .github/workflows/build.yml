@@ -57,6 +57,10 @@ jobs:
       run: |
         npx shadow-cljs compile test
         npx karma start --single-run
+    - name: Run CLJS tests (advanced build) on browser
+      run: |
+        npx shadow-cljs release test
+        npx karma start --single-run
     - name: Measure test coverage
       run: clojure -Atest:coverage
     - name: Upload coverage report to CodeCov
