@@ -14,28 +14,19 @@ jobs:
       with:
         java-version: '11'
     - name: Setup Clojure CLI
-      uses: DeLaGuardo/setup-clojure@2.0
+      uses: DeLaGuardo/setup-clojure@3.1
       with:
         tools-deps: latest
-    - name: Cache .m2
+    - name: Cache deps
       uses: actions/cache@v1
       with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('deps.edn') }}
+        path: |
+          ~/.m2
+          ~/.gitlibs
+          .cpcache
+        key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
         restore-keys: |
-          ${{ runner.os }}-m2-
-    - name: Cache .gitlibs
-      uses: actions/cache@v1
-      with:
-        path: ~/.gitlibs
-        key: ${{ runner.os }}-gitlibs-${{ hashFiles('deps.edn') }}
-        restore-keys: |
-          ${{ runner.os }}-gitlibs-
-    - name: Cache .cpcache
-      uses: actions/cache@v1
-      with:
-        path: .cpcache
-        key: ${{ runner.os }}-cpcache-${{ hashFiles('deps.edn') }}
+          ${{ runner.os }}-deps-
     - name: Cache node modules
       uses: actions/cache@v1
       with:
@@ -45,14 +36,14 @@ jobs:
           ${{ runner.os }}-node_modules-
     - name: Install deps
       run: |
-        clojure -Rcheck:test:cljs:coverage -Stree
+        clojure -A:check:test:cljs:coverage -P
         npm install
     - name: Run check
-      run: clojure -Acheck
+      run: clojure -M:check
     - name: Run CLJ tests
-      run: clojure -Atest
+      run: clojure -M:test
     - name: Run CLJS tests on Node
-      run: clojure -Atest:cljs:test-cljs
+      run: clojure -M:test:cljs:test-cljs
     - name: Run CLJS tests on browser
       run: |
         npx shadow-cljs compile test
@@ -62,6 +53,6 @@ jobs:
         npx shadow-cljs release test
         npx karma start --single-run
     - name: Measure test coverage
-      run: clojure -Atest:coverage
+      run: clojure -M:test:coverage
     - name: Upload coverage report to CodeCov
       uses: codecov/codecov-action@v1
