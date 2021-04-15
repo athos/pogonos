@@ -1,25 +1,25 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.10.2"}}
+ :deps {org.clojure/clojure {:mvn/version "1.10.3"}}
  :aliases {:check
            {:extra-deps
             {athos/clj-check {:git/url "https://github.com/athos/clj-check.git"
-                              :sha "da6363a38b06d9b84976ed330a9544b69d3c4dee"}}
+                              :sha "0ca84df1357d71429243b99908303f45a934654c"}}
             :main-opts ["-m" "clj-check.check"]}
            :test
            {:extra-paths ["test" "test-resources"]
             :extra-deps {org.clojure/data.json {:mvn/version "0.2.7"}}
             :main-opts ["-m" "pogonos.test-runner"]}
            :coverage
-           {:extra-deps {cloverage/cloverage {:mvn/version "1.1.2"}}
+           {:extra-deps {cloverage/cloverage {:mvn/version "1.2.2"}}
             :main-opts ["-m" "cloverage.coverage"
                         "-p" "src" "-s" "test" "--codecov"
                         "-e" "pogonos.reader"]}
            :shadow-cljs
-           {:extra-deps {thheller/shadow-cljs {:mvn/version "2.10.22"}}
+           {:extra-deps {thheller/shadow-cljs {:mvn/version "2.12.5"}}
             :main-opts ["-m" "shadow.cljs.devtools.cli"]}
            :cljs
            {:extra-deps
-            {org.clojure/clojurescript {:mvn/version "1.10.597"}}}
+            {org.clojure/clojurescript {:mvn/version "1.10.844"}}}
            :test-cljs
            {:main-opts ["-m" "cljs.main" "-re" "node"
                         "-m" "pogonos.test-runner"]}}}
