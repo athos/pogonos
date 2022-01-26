@@ -289,7 +289,7 @@
                           (str "Unescaped variable tag \"" *open-delim* "{\" "
                                "cannot be used while changing delimiters")
                           line line-num start
-                          {:opening-delimter *open-delim*
+                          {:opening-delimiter *open-delim*
                            :closing-delimiter *close-delim*}))
               (do (unread-char parser)
                   (parse-variable parser pre false)))
