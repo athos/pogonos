@@ -161,6 +161,52 @@
             (render-input in data opts)))
         (throw (FileNotFoundException. res))))))
 
+(defn check-input
+  ([in] (check-input in {}))
+  ([in opts]
+   (parse/parse in (fn [_]) opts)))
+
+(defn check-string
+  "Parses the given template string and throws if it contains a syntax error.
+  Otherwise return nil.
+
+  Optionally takes an option map. The option map may have the following keys:
+
+  - :suppress-verbose-errors  If set to true, suppress verbose error messages.
+                              Defaults to false."
+  ([s] (check-string s {}))
+  ([s opts]
+   (check-input (reader/make-string-reader s) opts)))
+
+#?(:clj
+   (defn check-file
+     "Takes a file name that contains a Mustache template, and performs syntax check.
+Throws if there is a syntax error, otherwise returns nil.
+
+Optionally takes an option map. See the docstring of `check-string` for
+the available options."
+     ([file] (check-file file {}))
+     ([file opts]
+      (let [f (io/as-file file)]
+        (if (.exists f)
+          (with-open [in (reader/make-file-reader f)]
+            (check-input in (assoc opts :source (.getName f))))
+          (throw (FileNotFoundException. (.getName f))))))))
+
+#?(:clj
+   (defn check-resource
+     "Takes a resource name that contains a Mustache template, and performs syntax check.
+
+Optionally takes an option map. See the docstring of `check-string` for
+the available options."
+     ([res] (check-resource res {}))
+     ([res opts]
+      (if-let [res (io/resource res)]
+        (let [opts (cond-> opts (string? res) (assoc :source res))]
+          (with-open [in (reader/make-file-reader res)]
+            (check-input in opts)))
+        (throw (FileNotFoundException. res))))))
+
 (defn perr
   "Prints detailed error message. The argument `err` must be a parse-time exception
   thrown in render or parse functions. Otherwise, nothing will be displayed."
