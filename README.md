@@ -124,6 +124,34 @@ parsing results for templates you've ever rendered, for better performance
 of rendering. So, if you're trying to use Pogonos where the rendering
 performance matters much, you may have to cache parsed templates on your own.
 
+#### `check-string` / `check-file` / `check-resource`
+
+Pogonos also provides another set of functions: `check-string`, `check-file` and `check-resource`.
+
+These functions try to parse the input template and check if the template
+contains any Mustache syntax error. If any, they will report it as an exception.
+Otherwise, they will return nil silently:
+
+```clojure
+(pg/check-string "Hello, {{name")
+;; Execution error (ExceptionInfo) at pogonos.error/error (error.cljc:52).
+;; Missing closing delimiter "}}" (1:14):
+;;
+;;   1| Hello, {{name
+;;                   ^^
+
+(pg/check-string "Hello, {{name}}!")
+;=> nil
+```
+
+The verbosity of error messages can be controlled by an option.
+See [Error messages](#error-messages) for details.
+
+What the `check-*` functions do is semantically equivalent to "parsing a template
+and discarding the parsed result". However, the `check-*` functions are generally
+more efficient than `parse-*` in this regard because the former functions do not
+actually build a syntax tree.
+
 ### Outputs
 
 An output is the way to specify where to output the rendering result.
