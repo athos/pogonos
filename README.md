@@ -40,6 +40,8 @@ We will show you how to use Pogonos in this section, but if you're not too famil
 
 ### Fundamentals
 
+#### `render-string`
+
 The easiest way to use the library is to just call `render-string`:
 
 ```clojure
@@ -57,6 +59,8 @@ The function, then, will render the template and return the resulting string.
 If you'd rather write out the rendering result to somewhere, instead of
 generating a string, you can use *outputs* to specify where to output the result.
 See [Outputs](#outputs) for the details.
+
+#### `render-file` / `render-resource`
 
 `render-string` has look-alike cousins named `render-file` and `render-resource`.
 The only difference between `render-string` and those functions is that `render-string`
@@ -87,6 +91,8 @@ included in the classpath):
 ;; loads a template from a resource file on the classpath
 (pg/render-resource "sample.mustache" {:name "Rich"})
 ```
+
+#### `parse-string` / `parse-file` / `parse-resource` / `render`
 
 All the render functions mentioned above are more suitable for one-shot
 rendering. But if you want to render the same template with different contexts
