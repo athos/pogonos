@@ -4,6 +4,7 @@
             [pogonos.core :as pg]))
 
 (def ^:private demo-file "templates/demo.mustache")
+(def ^:private broken-file "templates/broken.mustache")
 
 (def ^:private data
   {:header "Colors"
@@ -17,6 +18,19 @@
      (is (= (pg/parse-string (slurp (io/resource demo-file)))
             (pg/parse-file (io/as-file (io/resource demo-file)))
             (pg/parse-resource demo-file)))))
+
+(deftest check-test
+  (is (nil? (pg/check-string "Hello, {{name}}!")))
+  (is (thrown? #?(:clj Exception :cljs js/Error)
+               (pg/check-string "Hello, {{name}!")))
+  #?(:clj
+     (is (nil? (pg/check-file (io/as-file (io/resource demo-file))))))
+  #?(:clj
+     (is (thrown? Exception (pg/check-file (io/as-file (io/resource broken-file))))))
+  #?(:clj
+     (is (nil? (pg/check-resource demo-file))))
+  #?(:clj
+     (is (thrown? Exception (pg/check-resource broken-file)))))
 
 #?(:clj
    (deftest render-test
