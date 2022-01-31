@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
+### Added
+- ([#6](https://github.com/athos/pogonos/pull/6)) New API to check template syntax
 
 ## [0.1.1] - 2020-08-20
 ### Changed
