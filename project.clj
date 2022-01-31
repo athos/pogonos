@@ -4,12 +4,12 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :profiles {:provided
-             {:dependencies [[org.clojure/clojure "1.10.2"]
-                             [org.clojure/clojurescript "1.10.597"]]}
+             {:dependencies [[org.clojure/clojure "1.10.3"]
+                             [org.clojure/clojurescript "1.10.914"]]}
              :dev
              ;; these are necessary only for tests, so ideally they should go
              ;; under :test profile, but our IDE requires them to be here
              ;; to load test code fine
-             {:dependencies [[org.clojure/data.json "0.2.7"]]
+             {:dependencies [[org.clojure/data.json "2.4.0"]]
               :resource-paths ["test-resources"]}}
   :repl-options {:init-ns pogonos.core})
