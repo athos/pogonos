@@ -40,6 +40,8 @@ We will show you how to use Pogonos in this section, but if you're not too famil
 
 ### Fundamentals
 
+#### `render-string`
+
 The easiest way to use the library is to just call `render-string`:
 
 ```clojure
@@ -57,6 +59,8 @@ The function, then, will render the template and return the resulting string.
 If you'd rather write out the rendering result to somewhere, instead of
 generating a string, you can use *outputs* to specify where to output the result.
 See [Outputs](#outputs) for the details.
+
+#### `render-file` / `render-resource`
 
 `render-string` has look-alike cousins named `render-file` and `render-resource`.
 The only difference between `render-string` and those functions is that `render-string`
@@ -88,6 +92,8 @@ included in the classpath):
 (pg/render-resource "sample.mustache" {:name "Rich"})
 ```
 
+#### `parse-string` / `parse-file` / `parse-resource` / `render`
+
 All the render functions mentioned above are more suitable for one-shot
 rendering. But if you want to render the same template with different contexts
 over and over again, it would be more efficient to prepare a *parsed template*
@@ -117,6 +123,34 @@ At the time, Pogonos does NOT have an internal mechanism to implicitly cache
 parsing results for templates you've ever rendered, for better performance
 of rendering. So, if you're trying to use Pogonos where the rendering
 performance matters much, you may have to cache parsed templates on your own.
+
+#### `check-string` / `check-file` / `check-resource` \[`0.2.0+`\]
+
+Since `0.2.0`, Pogonos also provides another set of functions: `check-string`, `check-file` and `check-resource`.
+
+These functions try to parse the input template and check if the template
+contains any Mustache syntax error. If any, they will report it as an exception.
+Otherwise, they will return nil silently:
+
+```clojure
+(pg/check-string "Hello, {{name")
+;; Execution error (ExceptionInfo) at pogonos.error/error (error.cljc:52).
+;; Missing closing delimiter "}}" (1:14):
+;;
+;;   1| Hello, {{name
+;;                   ^^
+
+(pg/check-string "Hello, {{name}}!")
+;=> nil
+```
+
+The verbosity of error messages can be controlled by an option.
+See [Error messages](#error-messages) for details.
+
+What the `check-*` functions do is semantically equivalent to "parsing a template
+and discarding the parsed result". However, the `check-*` functions are generally
+more efficient than `parse-*` in this regard because the former functions do not
+actually build a syntax tree.
 
 ### Outputs
 
