@@ -124,9 +124,9 @@ parsing results for templates you've ever rendered, for better performance
 of rendering. So, if you're trying to use Pogonos where the rendering
 performance matters much, you may have to cache parsed templates on your own.
 
-#### `check-string` / `check-file` / `check-resource`
+#### `check-string` / `check-file` / `check-resource` \[`0.2.0+`\]
 
-Pogonos also provides another set of functions: `check-string`, `check-file` and `check-resource`.
+Since `0.2.0`, Pogonos also provides another set of functions: `check-string`, `check-file` and `check-resource`.
 
 These functions try to parse the input template and check if the template
 contains any Mustache syntax error. If any, they will report it as an exception.

@@ -174,6 +174,7 @@
 
   - :suppress-verbose-errors  If set to true, suppress verbose error messages.
                               Defaults to false."
+  {:added "0.2.0"}
   ([s] (check-string s {}))
   ([s opts]
    (check-input (reader/make-string-reader s) opts)))
@@ -185,6 +186,7 @@ Throws if there is a syntax error, otherwise returns nil.
 
 Optionally takes an option map. See the docstring of `check-string` for
 the available options."
+     {:added "0.2.0"}
      ([file] (check-file file {}))
      ([file opts]
       (let [f (io/as-file file)]
@@ -199,6 +201,7 @@ the available options."
 
 Optionally takes an option map. See the docstring of `check-string` for
 the available options."
+     {:added "0.2.0"}
      ([res] (check-resource res {}))
      ([res opts]
       (if-let [res (io/resource res)]
