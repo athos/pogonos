@@ -29,11 +29,20 @@
 (def ^:private ^:const path-separator
   (re-pattern (Pattern/quote (System/getProperty "path.separator"))))
 
-(defn- check-files [dir opts]
-  (let [dirs (str/split dir path-separator)]
+(defn- str->matcher [s]
+  (comp boolean (partial re-find (re-pattern s))))
+
+(defn- check-files [dirs {:keys [file-regex file-exclude-regex] :as opts}]
+  (let [include? (if file-regex
+                   (str->matcher file-regex)
+                   (constantly true))
+        exclude? (if file-exclude-regex
+                   (str->matcher file-exclude-regex)
+                   (constantly false))]
     (doseq [dir dirs
             ^File file (file-seq (io/file dir))
-            :when (.isFile file)]
+            :let [path (.getPath file)]
+            :when (and (.isFile file) (include? path) (not (exclude? path)))]
       (pg/check-file file opts))))
 
 (defn check [{:keys [string file dir resource] :as opts}]
