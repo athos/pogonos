@@ -49,7 +49,10 @@
   (try
     (cond string (pg/check-string string opts)
           file (pg/check-file (str file) opts)
-          dir (check-files (str dir) opts)
+          dir (check-files (if (sequential? dir)
+                             (mapv str dir)
+                             (str/split (str dir) path-separator))
+                           opts)
           resource (pg/check-resource (str resource) opts)
           :else (pg/check-input (reader/->reader *in*) opts))
     (catch Exception e
