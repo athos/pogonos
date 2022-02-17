@@ -32,27 +32,38 @@
 (defn- str->matcher [s]
   (comp boolean (partial re-find (re-pattern s))))
 
-(defn- check-files [dirs {:keys [file-regex file-exclude-regex] :as opts}]
-  (let [include? (if file-regex
-                   (str->matcher file-regex)
-                   (constantly true))
-        exclude? (if file-exclude-regex
-                   (str->matcher file-exclude-regex)
-                   (constantly false))]
-    (doseq [dir dirs
+(defn- check-inputs [inputs include? exclude? opts]
+  (let [include? (or include? (constantly true))
+        exclude? (or exclude? (constantly false))]
+    (doseq [input inputs
+            :when (and (include? input) (not (exclude? input)))]
+      (with-open [r (reader/->reader input)]
+        (pg/check-input r opts)))))
+
+(defn- check-files [files {:keys [file-regex file-exclude-regex] :as opts}]
+  (let [include? (when file-regex
+                   (comp (str->matcher file-regex) #(.getPath ^File %)))
+        exclude? (when file-exclude-regex
+                   (comp (str->matcher file-exclude-regex) #(.getPath ^File %)))]
+    (check-inputs (map io/file files) include? exclude? opts)))
+
+(defn- check-dirs [dirs opts]
+  (-> (for [dir dirs
             ^File file (file-seq (io/file dir))
-            :let [path (.getPath file)]
-            :when (and (.isFile file) (include? path) (not (exclude? path)))]
-      (pg/check-file file opts))))
+            :when (.isFile file)]
+        file)
+      (check-files opts)))
+
+(defn- split-path [path]
+  (if (sequential? path)
+    (mapv str path)
+    (str/split (str path) path-separator)))
 
 (defn check [{:keys [string file dir resource] :as opts}]
   (try
     (cond string (pg/check-string string opts)
-          file (pg/check-file (str file) opts)
-          dir (check-files (if (sequential? dir)
-                             (mapv str dir)
-                             (str/split (str dir) path-separator))
-                           opts)
+          file (check-files (split-path file) opts)
+          dir (check-dirs (split-path dir) opts)
           resource (pg/check-resource (str resource) opts)
           :else (pg/check-input (reader/->reader *in*) opts))
     (catch Exception e
