@@ -36,6 +36,22 @@
     (fn [s]
       (boolean (some #(re-find % s) regexes)))))
 
+(def ^:private ^:dynamic *errors*)
+
+(defn- with-error-handling
+  ([f] (with-error-handling nil f))
+  ([source f]
+   (try
+     (f)
+     (catch Exception e
+       (if (::error/type (ex-data e))
+         (do (binding [*out* *err*
+                       error/*source* source]
+               (print "[ERROR] ")
+               (pg/perr e))
+             (set! *errors* (conj *errors* e)))
+         (throw e))))))
+
 (defn- check-inputs [inputs {:keys [include-regex exclude-regex] :as opts}]
   (let [include? (if include-regex
                    (->matcher include-regex)
@@ -49,7 +65,8 @@
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
-        (pg/check-input r (assoc opts :source name))))))
+        (with-error-handling name
+          #(pg/check-input r opts))))))
 
 (defn- check-files [files opts]
   (-> (for [file files
@@ -75,14 +92,12 @@
     (str/split (str path) path-separator)))
 
 (defn check [{:keys [string file dir resource] :as opts}]
-  (try
-    (cond string (pg/check-string string opts)
+  (binding [*errors* []]
+    (cond string (with-error-handling #(pg/check-string string opts))
           file (check-files (split-path file) opts)
           resource (check-resources (split-path resource) opts)
           dir (check-dirs (split-path dir) opts)
-          :else (pg/check-input (reader/->reader *in*) opts))
-    (catch Exception e
-      (if (::error/type (ex-data e))
-        (throw (ex-info (str "Template parsing failed: " (ex-message e))
-                        (ex-data e)))
-        (throw e)))))
+          :else (with-error-handling
+                  #(pg/check-input (reader/->reader *in*) opts)))
+    (when (seq *errors*)
+      (System/exit 1))))
