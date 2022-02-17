@@ -45,7 +45,7 @@
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
-        (pg/check-input r opts)))))
+        (pg/check-input r (assoc opts :source name))))))
 
 (defn- check-files [files opts]
   (-> (for [file files
