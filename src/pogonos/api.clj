@@ -30,7 +30,7 @@
   (re-pattern (Pattern/quote (System/getProperty "path.separator"))))
 
 (defn- str->matcher [s]
-  (comp boolean (partial re-find (re-pattern s))))
+  (comp boolean (partial re-find (re-pattern (str s)))))
 
 (defn- check-inputs [inputs {:keys [include-regex exclude-regex] :as opts}]
   (let [include? (if include-regex
