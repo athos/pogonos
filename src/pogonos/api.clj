@@ -29,15 +29,19 @@
 (def ^:private ^:const path-separator
   (re-pattern (Pattern/quote (System/getProperty "path.separator"))))
 
-(defn- str->matcher [s]
-  (comp boolean (partial re-find (re-pattern (str s)))))
+(defn- ->matcher [x]
+  (let [regexes (if (coll? x)
+                  (mapv (comp re-pattern str) x)
+                  [(re-pattern (str x))])]
+    (fn [s]
+      (boolean (some #(re-find % s) regexes)))))
 
 (defn- check-inputs [inputs {:keys [include-regex exclude-regex] :as opts}]
   (let [include? (if include-regex
-                   (str->matcher include-regex)
+                   (->matcher include-regex)
                    (constantly true))
         exclude? (if exclude-regex
-                   (str->matcher exclude-regex)
+                   (->matcher exclude-regex)
                    (constantly false))]
     (doseq [{:keys [name input]} inputs
             :when (and (include? name) (not (exclude? name)))]
