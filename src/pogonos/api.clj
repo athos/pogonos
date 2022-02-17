@@ -35,8 +35,11 @@
 (defn- check-inputs [inputs include? exclude? opts]
   (let [include? (or include? (constantly true))
         exclude? (or exclude? (constantly false))]
-    (doseq [input inputs
+    (doseq [{:keys [name input]} inputs
             :when (and (include? input) (not (exclude? input)))]
+      (when-not (:quiet opts)
+        (binding [*out* *err*]
+          (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
         (pg/check-input r opts)))))
 
@@ -45,7 +48,10 @@
                    (comp (str->matcher file-regex) #(.getPath ^File %)))
         exclude? (when file-exclude-regex
                    (comp (str->matcher file-exclude-regex) #(.getPath ^File %)))]
-    (check-inputs (map io/file files) include? exclude? opts)))
+    (-> (for [file files
+              :let [file (io/file file)]]
+          {:name (.getPath file) :input file})
+        (check-inputs include? exclude? opts))))
 
 (defn- check-dirs [dirs opts]
   (-> (for [dir dirs
