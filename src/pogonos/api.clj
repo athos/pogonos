@@ -32,26 +32,31 @@
 (defn- str->matcher [s]
   (comp boolean (partial re-find (re-pattern s))))
 
-(defn- check-inputs [inputs include? exclude? opts]
-  (let [include? (or include? (constantly true))
-        exclude? (or exclude? (constantly false))]
+(defn- check-inputs [inputs {:keys [include-regex exclude-regex] :as opts}]
+  (let [include? (if include-regex
+                   (str->matcher include-regex)
+                   (constantly true))
+        exclude? (if exclude-regex
+                   (str->matcher exclude-regex)
+                   (constantly false))]
     (doseq [{:keys [name input]} inputs
-            :when (and (include? input) (not (exclude? input)))]
+            :when (and (include? name) (not (exclude? name)))]
       (when-not (:quiet opts)
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
         (pg/check-input r opts)))))
 
-(defn- check-files [files {:keys [file-regex file-exclude-regex] :as opts}]
-  (let [include? (when file-regex
-                   (comp (str->matcher file-regex) #(.getPath ^File %)))
-        exclude? (when file-exclude-regex
-                   (comp (str->matcher file-exclude-regex) #(.getPath ^File %)))]
-    (-> (for [file files
-              :let [file (io/file file)]]
-          {:name (.getPath file) :input file})
-        (check-inputs include? exclude? opts))))
+(defn- check-files [files opts]
+  (-> (for [file files
+            :let [file (io/file file)]]
+        {:name (.getPath file) :input file})
+      (check-inputs opts)))
+
+(defn- check-resources [resources opts]
+  (-> (for [res resources]
+        {:name res :input (io/resource res)})
+      (check-inputs opts)))
 
 (defn- check-dirs [dirs opts]
   (-> (for [dir dirs
@@ -69,8 +74,8 @@
   (try
     (cond string (pg/check-string string opts)
           file (check-files (split-path file) opts)
+          resource (check-resources (split-path resource) opts)
           dir (check-dirs (split-path dir) opts)
-          resource (pg/check-resource (str resource) opts)
           :else (pg/check-input (reader/->reader *in*) opts))
     (catch Exception e
       (if (::error/type (ex-data e))
