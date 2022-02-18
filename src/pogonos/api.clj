@@ -39,16 +39,17 @@
 (def ^:private ^:dynamic *errors*)
 
 (defn- with-error-handling
-  ([f] (with-error-handling nil f))
-  ([source f]
+  ([opts f] (with-error-handling nil opts f))
+  ([source opts f]
    (try
      (f)
      (catch Exception e
        (if (::error/type (ex-data e))
-         (do (binding [*out* *err*
-                       error/*source* source]
-               (print "[ERROR] ")
-               (pg/perr e))
+         (do (when-not (:quiet opts)
+               (binding [*out* *err*
+                         error/*source* source]
+                 (print "[ERROR] ")
+                 (pg/perr e)))
              (set! *errors* (conj *errors* e)))
          (throw e))))))
 
@@ -65,7 +66,7 @@
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
-        (with-error-handling name
+        (with-error-handling name opts
           #(pg/check-input r opts))))))
 
 (defn- check-files [files opts]
@@ -94,11 +95,11 @@
 (defn check
   [{:keys [string file dir resource on-failure] :or {on-failure :exit} :as opts}]
   (binding [*errors* []]
-    (cond string (with-error-handling #(pg/check-string string opts))
+    (cond string (with-error-handling opts #(pg/check-string string opts))
           file (check-files (split-path file) opts)
           resource (check-resources (split-path resource) opts)
           dir (check-dirs (split-path dir) opts)
-          :else (with-error-handling
+          :else (with-error-handling opts
                   #(pg/check-input (reader/->reader *in*) opts)))
     (when (seq *errors*)
       (case on-failure
