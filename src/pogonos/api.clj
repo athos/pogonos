@@ -38,20 +38,16 @@
 
 (def ^:private ^:dynamic *errors*)
 
-(defn- with-error-handling
-  ([opts f] (with-error-handling nil opts f))
-  ([source opts f]
-   (try
-     (f)
-     (catch Exception e
-       (if (::error/type (ex-data e))
-         (do (when-not (:quiet opts)
-               (binding [*out* *err*
-                         error/*source* source]
-                 (print "[ERROR] ")
-                 (pg/perr e)))
-             (set! *errors* (conj *errors* e)))
-         (throw e))))))
+(defn- with-error-handling [opts f]
+  (try
+    (f)
+    (catch Exception e
+      (if (::error/type (ex-data e))
+        (do (when-not (:quiet opts)
+              (binding [*out* *err*]
+                (println "[ERROR]" (ex-message e))))
+            (set! *errors* (conj *errors* e)))
+        (throw e)))))
 
 (defn- check-inputs [inputs {:keys [include-regex exclude-regex] :as opts}]
   (let [include? (if include-regex
@@ -66,8 +62,8 @@
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
-        (with-error-handling name opts
-          #(pg/check-input r opts))))))
+        (with-error-handling opts
+          #(pg/check-input r (assoc opts :source name)))))))
 
 (defn- check-files [files opts]
   (-> (for [file files
