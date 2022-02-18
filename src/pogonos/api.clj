@@ -43,7 +43,7 @@
     (f)
     (catch Exception e
       (if (::error/type (ex-data e))
-        (do (when-not (:quiet opts)
+        (do (when (or (not (:quiet opts)) (:only-show-errors opts))
               (binding [*out* *err*]
                 (println "[ERROR]" (ex-message e))))
             (set! *errors* (conj *errors* e)))
@@ -58,7 +58,7 @@
                    (constantly false))]
     (doseq [{:keys [name input]} inputs
             :when (and (include? name) (not (exclude? name)))]
-      (when-not (:quiet opts)
+      (when (and (not (:quiet opts)) (not (:only-show-errors opts)))
         (binding [*out* *err*]
           (println "Checking template" name)))
       (with-open [r (reader/->reader input)]
