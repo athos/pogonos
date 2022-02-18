@@ -91,7 +91,8 @@
     (mapv str path)
     (str/split (str path) path-separator)))
 
-(defn check [{:keys [string file dir resource] :as opts}]
+(defn check
+  [{:keys [string file dir resource on-failure] :or {on-failure :exit} :as opts}]
   (binding [*errors* []]
     (cond string (with-error-handling #(pg/check-string string opts))
           file (check-files (split-path file) opts)
@@ -100,4 +101,7 @@
           :else (with-error-handling
                   #(pg/check-input (reader/->reader *in*) opts)))
     (when (seq *errors*)
-      (System/exit 1))))
+      (case on-failure
+        :exit (System/exit 1)
+        :throw (throw (ex-info "Template checking failed" {:errors *errors*}))
+        nil))))
