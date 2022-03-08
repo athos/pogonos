@@ -9,7 +9,9 @@
   (:import [java.io File PushbackReader]
            [java.util.regex Pattern]))
 
-(defn render [{:keys [string file resource data data-file output] :as opts}]
+(defn render
+  {:added "0.2.0"}
+  [{:keys [string file resource data data-file output] :as opts}]
   (let [data (or (when data-file
                    (with-open [r (-> (io/reader (str data-file))
                                      PushbackReader.)]
@@ -89,6 +91,7 @@
     (str/split (str path) path-separator)))
 
 (defn check
+  {:added "0.2.0"}
   [{:keys [string file dir resource on-failure] :or {on-failure :exit} :as opts}]
   (binding [*errors* []]
     (cond string (with-error-handling opts #(pg/check-string string opts))
