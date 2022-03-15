@@ -10,6 +10,21 @@
            [java.util.regex Pattern]))
 
 (defn render
+  "Renders the given Mustache template.
+
+  One of the following option can be specified as a template source:
+   - :string    Renders the given template string
+   - :file      Renders the specified template file
+   - :resource  Renders the specified template resource on the classpath
+
+  If none of these are specified, the template will be read from stdin.
+
+  The following options can also be specified:
+   - :output     Path to the output file. If not specified, the rendering result
+                 will be emitted to stdout by default.
+   - :data       Map of the values passed to the template
+   - :data-file  If specified, reads an edn map from the file specified by that
+                 path and pass it to the template"
   {:added "0.2.0"}
   [{:keys [string file resource data data-file output] :as opts}]
   (let [data (or (when data-file
@@ -91,6 +106,27 @@
     (str/split (str path) path-separator)))
 
 (defn check
+  "Checks if the given Mustache template contains any syntax error.
+
+  The following options cab be specified as a template source:
+   - :string    Checks the given template string
+   - :file      Checks the specified template file
+   - :dir       Checks the template files in the specified directory
+   - :resource  Checks the specified template resource on the classpath
+
+  If none of these are specified, the template will be read from stdin.
+
+  For the :file/:dir/:resource options, two or more files/directories/resources
+  may be specified by delimiting them with the file path separator (i.e. ':' (colon)
+  on Linux/macOS and ';' (semicolon) on Windows).
+
+  When multiple templates are checked using the :file/:dir/:resource options,
+  they can be filtered with the :include-regex and/or exclude-regex options.
+
+  The verbosity of the syntax check results may be adjusted to some extent with
+  the following options:
+   - :only-show-errors         Hides progress messages
+   - :suppress-verbose-errors  Suppresses verbose error messages"
   {:added "0.2.0"}
   [{:keys [string file dir resource on-failure] :or {on-failure :exit} :as opts}]
   (binding [*errors* []]
