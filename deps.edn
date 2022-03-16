@@ -1,5 +1,6 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.3"}}
+ :tools/usage {:ns-default pogonos.api}
  :aliases {:check
            {:extra-deps
             {athos/clj-check {:git/url "https://github.com/athos/clj-check.git"
