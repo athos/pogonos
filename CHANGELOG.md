@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 ### Added
 - ([#6](https://github.com/athos/pogonos/pull/6)) New API to check template syntax
+- ([#10](https://github.com/athos/pogonos/pull/10)) API for use as `-X` program or `-T` CLI tool
 
 ## [0.1.1] - 2020-08-20
 ### Changed
