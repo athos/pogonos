@@ -27,6 +27,7 @@ to change.
   - [Outputs](#outputs)
   - [Partials](#partials)
   - [Error messages](#error-messages)
+  - [CLI usage](#cli-usage)
 
 ## Installation
 
@@ -267,6 +268,127 @@ Even while disabling verbose error messages, you can get them back by calling
 ;;
 ;;   1| Hello, {{name
 ;;                   ^^
+```
+
+### CLI usage
+
+Pogonos 0.2.0+ provides a new API for calling functions via the `-X`/`-T` option of the Clojure CLI.
+
+To use it as a `-X` program, add settings like the following to your `deps.edn`:
+
+```clojure
+{:aliases
+ {...
+  templ {:extra-deps {pogonos/pogonos {:mvn/version "<version>"}}
+         :ns-default pogonos.api}
+  ...}}
+```
+
+To use it as a `-T` tool, install Pogonos with the following command:
+
+```sh
+clojure -Ttools install io.github.athos/pogonos '{:git/sha <commit sha>}' :as templ
+```
+
+Then, you can call the API from the CLI like:
+
+```sh
+# as -X program
+$ clojure -X:templ <function name> ...
+
+# as -T tool
+$ clojure -T:templ <function name> ...
+```
+
+The functions available from the CLI are as follows:
+
+- [`render`](#render)
+- [`check`](#check)
+
+You will see the usage of each function in the next sections.
+
+#### `render`
+
+The `render` function renders the specified Mustache template.
+
+The example below renders a template file named `hello.mustache` with the data `{:name "Clojurian"}`:
+
+```sh
+$ cat hello.mustache
+Hello, {{name}}!
+$ clojure -X:templ render :file '"hello.mustache"' :data '{:name "Clojurian"}'
+Hello, Clojurian!
+$
+```
+
+The `:file` option specifies the path to the template file to be rendered. The `:data` option specifies a map of values passed to the template.
+
+If no template is specified, Pogonos will try to read the template from stdin:
+
+```sh
+$ echo 'Hello, {{name}}!' | clojure -X:templ render :data '{:name "Clojurian"}'
+Hello, Clojurian!
+$
+```
+
+The following table shows the available options for `render`:
+
+| Option | Description |
+| :----- | :---------- |
+| `:string` | Renders the given template string |
+| `:file` | Renders the specified template file |
+| `:resource` | Renders the specified template resource on the classpath |
+| `:output` | The path to the output file. If not specified, the rendering result will be emitted to stdout by default. |
+| `:data` | A map of values passed to the template |
+| `:data-file` | If specified, reads an EDN map from the file specified by that path and pass it to the template |
+
+#### `check`
+
+The `check` function performs a syntax check on a given Mustache template, reporting any syntax errors that the Mustache template contains.
+
+The example below checks a template file named `broken.mustache` that contains a syntax error:
+
+```sh
+$ cat broken.mustache
+This is a broken {{template
+$ clojure -X:templ check :file '"broken.mustache"'
+Checking template broken.mustache
+[ERROR] Missing closing delimiter "}}" (broken.mustache:1:28):
+
+  1| This is a broken {{template
+                                ^^
+$
+```
+
+If no template is specified, Pogonos will try to read the template to be checked from stdin:
+
+```sh
+$ echo '{{#foo}}' | clojure -X:templ check
+[ERROR] Missing section-end tag {{/foo}} (1:9):
+
+  1| {{#foo}}
+             ^^
+```
+
+The following table shows the available options for `check`:
+
+| Option | Description |
+| :----- | :---------- |
+| `:string` | Checks the given template string |
+| `:file` | Checks the specified template file |
+| `:dir` | Checks the template files in the specified directory |
+| `:resource` | Checks the specified template resource on the classpath |
+| `:include-regex` | Includes only the templates that match the given pattern |
+| `:exclude-regex` | Excludes the templates that match the given pattern |
+| `:only-show-errors` | Hides progress messages |
+| `:suppress-verbose-errors` | Suppresses verbose error messages |
+
+Note that the `:file`, `:dir` and `:resource` options allow multiple items to be specified separated by the file path separator (`:` (colon) on Linux/macOS and `;` (semicolon) on Windows).
+
+For example, the following command will check three template files named `foo.mustache`, `bar.mustache` and `baz.mustache` (Here, we assume that the file path separator is `:`):
+
+```sh
+$ clojure -X:templ check :file '"foo.mustache:bar.mustache:baz.mustache"'
 ```
 
 ## License
