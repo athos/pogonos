@@ -191,4 +191,4 @@
       (is (not (reader/blank-trailing? r)))
       (reader/read-line r)
       (is (= "baz" (reader/read-until r "|")))
-      (is (reader/blank-trailing? r)))))
+      (is (not (reader/blank-trailing? r))))))

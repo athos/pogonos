@@ -3,6 +3,7 @@
 
 (defprotocol IReader
   (read-line [this])
+  (end? [this])
   (close [this]))
 
 (defprotocol ToReader
