@@ -22,6 +22,7 @@
             ret (subs src offset offset')]
         (set! offset offset')
         ret)))
+  (end? [this] (>= offset (count src)))
   (close [this]))
 
 (defn ^pogonos.reader.StringReader make-string-reader [s]
@@ -61,6 +62,8 @@
                (do (.append sb buf offset (- size offset))
                    (set! offset size)
                    (recur sb)))))))
+     (end? [this]
+       (not (.ready reader)))
      (close [this]
        (.close reader))))
 
@@ -116,6 +119,8 @@
   proto/IReader
   (read-line [this]
     (read-line this))
+  (end? [this]
+    (proto/end? in))
   (close [this]
     (proto/close in)))
 
@@ -136,6 +141,12 @@
   (when-let [l (line reader)]
     (f l)))
 
+(defn- with-line-fed [reader f]
+  (when (nil? (line reader))
+    (read-line* reader))
+  (when-let [l (line reader)]
+    (f l)))
+
 (defn read-line [reader]
   (with-current-line reader
     (fn [line]
@@ -144,6 +155,14 @@
                   (subs (col-num reader)))]
         (set-col-num! reader (count line))
         ret))))
+
+(defn read-to-line-end [reader]
+  (with-line-fed reader
+    (fn [line]
+      (when (< (col-num reader) (count line))
+        (let [ret (subs line (col-num reader))]
+          (set-col-num! reader (count line))
+          ret)))))
 
 (defn read-until [reader s]
   (with-current-line reader
@@ -164,16 +183,14 @@
   nil)
 
 (defn end? [reader]
-  (nil? (with-current-line reader identity)))
+  (with-line-fed reader
+    (fn [line]
+      (and (>= (col-num reader) (count line))
+           (proto/end? reader)))))
 
 (defn blank-trailing? [reader]
-  ;; the implementation is a little bit tricky since with-current-line
-  ;; returns nil when next line is nil
-  (-> (with-current-line reader
-        (fn [line]
-          (->> (subs line (col-num reader))
-               (reduce (fn [_ c]
-                         (when-not (#{\space \tab \return \newline} c)
-                           (reduced true)))
-                       false))))
-      not))
+  (with-line-fed reader
+    (fn [line]
+      (when (< (col-num reader) (count line))
+        (every? #{\space \tab \return \newline}
+                (subs line (col-num reader)))))))

@@ -28,6 +28,9 @@
 (defn- read-line [{:keys [in]}]
   (reader/read-line in))
 
+(defn- read-to-line-end [{:keys [in]}]
+  (reader/read-to-line-end in))
+
 (defn- read-until [{:keys [in]} s]
   (reader/read-until in s))
 
@@ -114,14 +117,15 @@
    (and (= start (count pre))
         (str/blank? pre)
         (or ignore-trailing-blank?
-            (reader/blank-trailing? in)))))
+            (reader/blank-trailing? in)
+            (reader/end? in)))))
 
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]
     (when-not standalone?
       (emit parser pre))
     (let [pre (when standalone? (not-empty pre))
-          post (when standalone? (not-empty (read-line parser)))]
+          post (when standalone? (read-to-line-end parser))]
       (f pre post))))
 
 (declare parse*)
@@ -200,7 +204,7 @@
              (+ start (count *open-delim*) 1)
              {:partial-name name})
       (let [standalone? (standalone? parser pre start)
-            post (when standalone? (not-empty (read-line parser)))
+            post (when standalone? (read-to-line-end parser))
             indent (when standalone?
                      ;; if standalone, append current indent to previous one
                      ;; otherwise, ignore both current and previous indents
@@ -225,7 +229,7 @@
               prev-line-num (line-num parser)]
           (if-let [comment (read-until parser *close-delim*)]
             (let [post (when (reader/blank-trailing? (:in parser))
-                         (read-line parser))]
+                         (read-to-line-end parser))]
               (->> (cond-> (nodes/->Comment (conj acc comment))
                      (or (and standalone-open? (seq pre)) (seq post))
                      (with-meta {:pre pre :post post}))
