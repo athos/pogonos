@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file. This change
 - ([#6](https://github.com/athos/pogonos/pull/6)) New API to check template syntax
 - ([#10](https://github.com/athos/pogonos/pull/10)) API for use as `-X` program or `-T` CLI tool
 
+### Changed
+- ([#14](https://github.com/athos/pogonos/pull/14)) `pogonos.reader/blank-trailing?` now returns a falsy value when the reader reaches the end of the input source
+
+### Fixed
+- ([#9](https://github.com/athos/pogonos/issues/9)) Detailed error messages won't be shown if line has no trailing line break
+
 ## [0.1.1] - 2020-08-20
 ### Changed
 - ([#1](https://github.com/athos/pogonos/pull/1)) Fix `VerifyError` on some environments
