@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. This change
 
 ### Fixed
 - ([#9](https://github.com/athos/pogonos/issues/9)) Detailed error messages won't be shown if line has no trailing line break
+- ([#15](https://github.com/athos/pogonos/pull/15)) Fix incomplete error messages for comment tags
 
 ## [0.1.1] - 2020-08-20
 ### Changed
