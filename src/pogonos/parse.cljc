@@ -34,6 +34,12 @@
 (defn- read-until [{:keys [in]} s]
   (reader/read-until in s))
 
+(defn- end? [{:keys [in]}]
+  (reader/end? in))
+
+(defn- blank-trailing? [{:keys [in]}]
+  (reader/blank-trailing? in))
+
 (defn- current-line [{:keys [in]}]
   (reader/line in))
 
@@ -56,7 +62,7 @@
               (fn [x]
                 (out x)
                 (when (and (string? x) (str/ends-with? x "\n")
-                           (not (reader/end? (:in parser))))
+                           (not (end? parser)))
                   (out indent)))
               out))))
 
@@ -113,12 +119,12 @@
 (defn- standalone?
   ([parser pre start]
    (standalone? parser pre start false))
-  ([{:keys [in]} pre start ignore-trailing-blank?]
+  ([parser pre start ignore-trailing-blank?]
    (and (= start (count pre))
         (str/blank? pre)
         (or ignore-trailing-blank?
-            (reader/blank-trailing? in)
-            (reader/end? in)))))
+            (blank-trailing? parser)
+            (end? parser)))))
 
 (defn- with-surrounding-whitespaces-processed [parser pre start f]
   (let [standalone? (standalone? parser pre start)]
@@ -215,7 +221,8 @@
             ((:out parser)))))))
 
 (defn- parse-comment [parser pre start]
-  (if-let [comment (read-until parser *close-delim*)]
+  (if-let [comment (when-not (end? parser)
+                     (read-until parser *close-delim*))]
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (-> (nodes/->Comment [comment])
@@ -224,24 +231,24 @@
     (let [standalone-open? (standalone? parser pre start true)]
       (when-not standalone-open?
         (emit parser pre))
-      (loop [acc [(read-line parser)]]
-        (let [prev-line (current-line parser)
-              prev-line-num (line-num parser)]
+      (loop [acc [(read-to-line-end parser)]]
+        (if (end? parser)
+          (let [prev-line (current-line parser)
+                prev-line-num (line-num parser)
+                line (some-> prev-line strip-newline)]
+            (error :missing-closing-delimiter
+                   (str "Missing closing delimiter \"" *close-delim* "\""
+                        " for comment tag")
+                   line prev-line-num (count line)
+                   {:closing-delimiter *close-delim*}))
           (if-let [comment (read-until parser *close-delim*)]
-            (let [post (when (reader/blank-trailing? (:in parser))
+            (let [post (when (blank-trailing? parser)
                          (read-to-line-end parser))]
               (->> (cond-> (nodes/->Comment (conj acc comment))
                      (or (and standalone-open? (seq pre)) (seq post))
                      (with-meta {:pre pre :post post}))
                    (emit parser)))
-            (if-let [line (read-line parser)]
-              (recur (conj acc line))
-              (let [line (strip-newline prev-line)]
-                (error :missing-closing-delimiter
-                       (str "Missing closing delimiter \"" *close-delim* "\""
-                            " for comment tag")
-                       line prev-line-num (count line)
-                       {:closing-delimiter *close-delim*})))))))))
+            (recur (conj acc (read-to-line-end parser)))))))))
 
 (defn- parse-set-delimiters [parser pre start]
   (let [line (current-line parser)

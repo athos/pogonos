@@ -63,7 +63,9 @@
                    (set! offset size)
                    (recur sb)))))))
      (end? [this]
-       (not (.ready reader)))
+       (or (and (>= offset size)
+                (< size (count buf)))
+           (neg? size)))
      (close [this]
        (.close reader))))
 
@@ -141,11 +143,10 @@
   (when-let [l (line reader)]
     (f l)))
 
-(defn- with-line-fed [reader f]
+(defn- ensure-line-fed [reader]
   (when (nil? (line reader))
     (read-line* reader))
-  (when-let [l (line reader)]
-    (f l)))
+  (line reader))
 
 (defn read-line [reader]
   (with-current-line reader
@@ -157,12 +158,11 @@
         ret))))
 
 (defn read-to-line-end [reader]
-  (with-line-fed reader
-    (fn [line]
-      (when (< (col-num reader) (count line))
-        (let [ret (subs line (col-num reader))]
-          (set-col-num! reader (count line))
-          ret)))))
+  (let [line (ensure-line-fed reader)]
+    (when (< (col-num reader) (count line))
+      (let [ret (subs line (col-num reader))]
+        (set-col-num! reader (count line))
+        ret))))
 
 (defn read-until [reader s]
   (with-current-line reader
@@ -183,14 +183,13 @@
   nil)
 
 (defn end? [reader]
-  (with-line-fed reader
-    (fn [line]
-      (and (>= (col-num reader) (count line))
-           (proto/end? reader)))))
+  (if-some [line (ensure-line-fed reader)]
+    (and (>= (col-num reader) (count line))
+         (proto/end? reader))
+    true))
 
 (defn blank-trailing? [reader]
-  (with-line-fed reader
-    (fn [line]
-      (when (< (col-num reader) (count line))
-        (every? #{\space \tab \return \newline}
-                (subs line (col-num reader)))))))
+  (let [line (ensure-line-fed reader)]
+    (when (< (col-num reader) (count line))
+      (every? #{\space \tab \return \newline}
+              (subs line (col-num reader))))))
