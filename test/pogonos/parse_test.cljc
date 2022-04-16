@@ -201,6 +201,8 @@
                                  nil
                                  (catch #?(:clj Exception :cljs :default) e
                                    (::error/type (ex-data e)))))
+      "{{!" :missing-closing-delimiter
+      "{{!\n" :missing-closing-delimiter
       "{{! comment" :missing-closing-delimiter
       "{{! comment\n" :missing-closing-delimiter))
   (testing "partials"
