@@ -20,9 +20,13 @@
     (is (nil? (proto/read-line r))))
   (let [r (reader/make-string-reader "foo\nbar\nbaz")]
     (is (= "foo\n" (proto/read-line r)))
+    (is (not (proto/end? r)))
     (is (= "bar\n" (proto/read-line r)))
+    (is (not (proto/end? r)))
     (is (= "baz" (proto/read-line r)))
-    (is (nil? (proto/read-line r))))
+    (is (proto/end? r))
+    (is (nil? (proto/read-line r)))
+    (is (proto/end? r)))
   (let [r (reader/make-string-reader "foo\nbar\nbaz\n")]
     (is (= "foo\n" (proto/read-line r)))
     (is (= "bar\n" (proto/read-line r)))
@@ -50,9 +54,13 @@
        (is (nil? (proto/read-line r))))
      (with-open [r (make-file-reader "foo\nbar\nbaz")]
        (is (= "foo\n" (proto/read-line r)))
+       (is (not (proto/end? r)))
        (is (= "bar\n" (proto/read-line r)))
+       (is (not (proto/end? r)))
        (is (= "baz" (proto/read-line r)))
-       (is (nil? (proto/read-line r))))
+       (is (proto/end? r))
+       (is (nil? (proto/read-line r)))
+       (is (proto/end? r)))
      (with-open [r (make-file-reader "foo\nbar\nbaz\n")]
        (is (= "foo\n" (proto/read-line r)))
        (is (= "bar\n" (proto/read-line r)))
