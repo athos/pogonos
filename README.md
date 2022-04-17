@@ -8,16 +8,15 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 ## Features
 
 - Completely compliant to the [Mustache spec](https://github.com/mustache/spec), including lambdas
-- Fast, but clean implementation
+- Fast but clean implementation
 - User-friendly error messages for parsing errors
-- Supports all of Clojure, ClojureScript and self-hosted ClojureScript
+- Supports Clojure, ClojureScript and self-hosted ClojureScript
 
 ## Project status
 
 Pogonos is still in beta. The public API provided in the `pogonos.core`
-namespace is almost fixed while any other interfaces, including various
-extension points (such as readers, outputs, AST nodes), are all subject
-to change.
+namespace is almost fixed while other interfaces, including various
+extension points (such as readers, outputs, AST nodes), are subject to change.
 
 ## Table of Contents
 
@@ -37,7 +36,7 @@ Add the following to your project's `:dependencies`:
 
 ## Usage
 
-We will show you how to use Pogonos in this section, but if you're not too familiar with the Mustache language itself, you might want to read its [documentation](http://mustache.github.io/) first.
+In this section, you'll see how to use Pogonos, but if you're not so familiar with the Mustache language itself, you might want to read its [documentation](http://mustache.github.io/) first.
 
 ### Fundamentals
 
@@ -56,14 +55,14 @@ The easiest way to use the library is to just call `render-string`:
 and a map of the values passed to the template.
 The keys of the map must be keywords.
 
-The function, then, will render the template and return the resulting string.
+Then, the function will render the template and return the resulting string.
 If you'd rather write out the rendering result to somewhere, instead of
 generating a string, you can use *outputs* to specify where to output the result.
-See [Outputs](#outputs) for the details.
+See [Outputs](#outputs) for details.
 
 #### `render-file` / `render-resource`
 
-`render-string` has look-alike cousins named `render-file` and `render-resource`.
+`render-string` has two look-alike cousins named `render-file` and `render-resource`.
 The only difference between `render-string` and those functions is that `render-string`
 directly takes a template string as an argument whereas `render-file` and
 `render-resource` load a template stored in a text file on the file system
@@ -121,9 +120,9 @@ And then, you can render the parsed template using the `render` function:
 ```
 
 At the time, Pogonos does NOT have an internal mechanism to implicitly cache
-parsing results for templates you've ever rendered, for better performance
-of rendering. So, if you're trying to use Pogonos where the rendering
-performance matters much, you may have to cache parsed templates on your own.
+parsed results of previously rendered templates for better rendering performance.
+So, if you want to use Pogonos in situations where the rendering performance matters,
+you may have to cache parsed templates yourself.
 
 #### `check-string` / `check-file` / `check-resource` \[`0.2.0+`\]
 
@@ -131,7 +130,7 @@ Since `0.2.0`, Pogonos also provides another set of functions: `check-string`, `
 
 These functions try to parse the input template and check if the template
 contains any Mustache syntax error. If any, they will report it as an exception.
-Otherwise, they will return nil silently:
+Otherwise, they will return `nil` silently:
 
 ```clojure
 (pg/check-string "Hello, {{name")
@@ -156,9 +155,9 @@ actually build a syntax tree.
 ### Outputs
 
 An output is the way to specify where to output the rendering result.
-By default, Pogonos' render functions output the result as a string.
+By default, Pogonos's render functions output the result as a string.
 You can emulate this behavior by specifying `(pogonos.output/to-string)`
-to them as the output like the following:
+as the output like the following:
 
 ```clojure
 (require '[pogonos.output :as output])
@@ -168,7 +167,7 @@ to them as the output like the following:
 ;=> "Hello, Clojure!"
 ```
 
-You can also write out the rendering result to a file or the stdout via output:
+You can also write out the rendering result to a file or to stdout via output:
 
 ```clojure
 ;; writes the rendering result to a file
@@ -181,7 +180,7 @@ You can also write out the rendering result to a file or the stdout via output:
 ```
 
 In general, it's more efficient to write out the rendering result
-directly to a file than to generate a resulting string, and then write it
+directly to a file than to generate a resulting string and then write it
 out to the file.
 
 ### Partials
@@ -227,6 +226,13 @@ You can even specify a map to utilize *inline* partials:
 (pg/render-string "<h2>Users</h2>{{#users}}{{>user}}{{/users}}"
                   {:users [{:name "Rich"} {:name "Alex"}]}
                   {:partials {:user "<strong>{{name}}</strong>"}}
+```
+
+To disable partials, specify `nil` for `:partials`:
+
+```clojure
+(pg/render-string "<h2>Users</h2>{{>partial}}" {} {:partials nil})
+;=> "<h2>Users</h2>"
 ```
 
 ### Error messages
@@ -279,25 +285,25 @@ To use it as a `-X` program, add settings like the following to your `deps.edn`:
 ```clojure
 {:aliases
  {...
-  templ {:extra-deps {pogonos/pogonos {:mvn/version "<version>"}}
-         :ns-default pogonos.api}
+  template {:extra-deps {pogonos/pogonos {:mvn/version "<version>"}}
+            :ns-default pogonos.api}
   ...}}
 ```
 
 To use it as a `-T` tool, install Pogonos with the following command:
 
 ```sh
-clojure -Ttools install io.github.athos/pogonos '{:git/sha <commit sha>}' :as templ
+clojure -Ttools install io.github.athos/pogonos '{:git/sha <commit sha>}' :as template
 ```
 
 Then, you can call the API from the CLI like:
 
 ```sh
 # as -X program
-$ clojure -X:templ <function name> ...
+$ clojure -X:template <function name> ...
 
 # as -T tool
-$ clojure -T:templ <function name> ...
+$ clojure -Ttemplate <function name> ...
 ```
 
 The functions available from the CLI are as follows:
@@ -316,7 +322,7 @@ The example below renders a template file named `hello.mustache` with the data `
 ```sh
 $ cat hello.mustache
 Hello, {{name}}!
-$ clojure -X:templ render :file '"hello.mustache"' :data '{:name "Clojurian"}'
+$ clojure -X:template render :file '"hello.mustache"' :data '{:name "Clojurian"}'
 Hello, Clojurian!
 $
 ```
@@ -326,7 +332,7 @@ The `:file` option specifies the path to the template file to be rendered. The `
 If no template is specified, Pogonos will try to read the template from stdin:
 
 ```sh
-$ echo 'Hello, {{name}}!' | clojure -X:templ render :data '{:name "Clojurian"}'
+$ echo 'Hello, {{name}}!' | clojure -X:template render :data '{:name "Clojurian"}'
 Hello, Clojurian!
 $
 ```
@@ -351,7 +357,7 @@ The example below checks a template file named `broken.mustache` that contains a
 ```sh
 $ cat broken.mustache
 This is a broken {{template
-$ clojure -X:templ check :file '"broken.mustache"'
+$ clojure -X:template check :file '"broken.mustache"'
 Checking template broken.mustache
 [ERROR] Missing closing delimiter "}}" (broken.mustache:1:28):
 
@@ -363,11 +369,12 @@ $
 If no template is specified, Pogonos will try to read the template to be checked from stdin:
 
 ```sh
-$ echo '{{#foo}}' | clojure -X:templ check
+$ echo '{{#foo}}' | clojure -X:template check
 [ERROR] Missing section-end tag {{/foo}} (1:9):
 
   1| {{#foo}}
              ^^
+$
 ```
 
 The following table shows the available options for `check`:
@@ -388,7 +395,7 @@ Note that the `:file`, `:dir` and `:resource` options allow multiple items to be
 For example, the following command will check three template files named `foo.mustache`, `bar.mustache` and `baz.mustache` (Here, we assume that the file path separator is `:`):
 
 ```sh
-$ clojure -X:templ check :file '"foo.mustache:bar.mustache:baz.mustache"'
+$ clojure -X:template check :file '"foo.mustache:bar.mustache:baz.mustache"'
 ```
 
 ## License
