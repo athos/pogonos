@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
+
+## [0.2.0] - 2022-04-18
 ### Added
 - ([#6](https://github.com/athos/pogonos/pull/6)) New API to check template syntax
 - ([#10](https://github.com/athos/pogonos/pull/10)) API for use as `-X` program or `-T` CLI tool
@@ -23,6 +25,7 @@ All notable changes to this project will be documented in this file. This change
 ## [0.1.0] - 2020-06-18
 - First release
 
-[Unreleased]: https://github.com/athos/pogonos/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/athos/pogonos/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/athos/pogonos/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/athos/pogonos/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/athos/pogonos/releases/0.1.0
