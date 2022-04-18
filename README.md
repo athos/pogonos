@@ -10,6 +10,7 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 - Completely compliant to the [Mustache spec](https://github.com/mustache/spec), including lambdas
 - Fast but clean implementation
 - User-friendly error messages for parsing errors
+- Handy API for use from the CLI
 - Supports Clojure, ClojureScript and self-hosted ClojureScript
 
 ## Project status
@@ -293,7 +294,7 @@ To use it as a `-X` program, add settings like the following to your `deps.edn`:
 To use it as a `-T` tool, install Pogonos with the following command:
 
 ```sh
-clojure -Ttools install io.github.athos/pogonos '{:git/sha <commit sha>}' :as template
+clojure -Ttools install io.github.athos/pogonos '{:git/tag <version>}' :as template
 ```
 
 Then, you can call the API from the CLI like:
