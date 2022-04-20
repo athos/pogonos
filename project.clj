@@ -1,4 +1,4 @@
-(defproject pogonos "0.2.0"
+(defproject pogonos "0.2.1-SNAPSHOT"
   :description "Another Clojure(Script) implementation of the Mustache templating language"
   :url "https://github.com/athos/pogonos"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
