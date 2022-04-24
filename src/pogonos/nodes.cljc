@@ -21,6 +21,10 @@
 
 (defrecord Partial [name indent])
 
+(defrecord Parent [name indent args nodes])
+
+(defrecord Block [name nodes])
+
 (defrecord Comment [body]
   IVisibility
   (visible? [this] false))

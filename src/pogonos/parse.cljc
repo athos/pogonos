@@ -7,7 +7,7 @@
             [pogonos.reader :as reader]
             [pogonos.stringify :as stringify]
             [pogonos.strings :as pstr])
-  #?(:clj (:import [pogonos.nodes SectionEnd])))
+  #?(:clj (:import [pogonos.nodes SectionEnd Block])))
 
 (def ^:const default-open-delim "{{")
 (def ^:const default-close-delim "}}")
@@ -168,8 +168,10 @@
                       (or (not= open default-open-delim)
                           (not= close default-close-delim))
                       (vary-meta assoc :open open :close close)
-                      (or pre post)
-                      (vary-meta assoc :pre pre :post post)
+                      pre
+                      (vary-meta assoc :pre pre)
+                      post
+                      (vary-meta assoc :post post)
                       true ((:out parser)))))]
           (-> (assoc parser :out out')
               (enable-indent-insertion)
@@ -220,6 +222,47 @@
         (-> (nodes/->Partial (keyword nil name) indent)
             (cond-> post (with-meta {:post post}))
             ((:out parser)))))))
+
+(defn- make-parent [name indent post nodes]
+  (let [params (into {}
+                     (keep
+                      (fn [node]
+                        (when (instance? #?(:clj Block :cljs nodes/Block) node)
+                          [(:name node) (:nodes node)])))
+                     nodes)]
+    (cond-> (nodes/->Parent name indent params nodes)
+      post (vary-meta assoc :post post))))
+
+(defn- parse-parent [parser pre start]
+  (let [name (pstr/trim (extract-tag-content parser))]
+    (if (str/blank? name)
+      (error :invalid-partial-name
+             (str "Invalid parent \"" name "\"")
+             (strip-newline (current-line parser))
+             (line-num parser)
+             (+ start (count *open-delim*) 1)
+             {:parent-name name})
+      (let [name' (keyword nil name)
+            standalone? (standalone? parser pre start)
+            post (when standalone? (read-to-line-end parser))
+            indent (when standalone?
+                     ;; same as partial
+                     (not-empty (str (:indent parser) pre)))]
+        (-> (assoc parser :section [name'])
+            (parse-section-like pre start (partial make-parent name' indent post)))))))
+
+(defn- parse-block [parser pre start]
+  (let [name (pstr/trim (extract-tag-content parser))]
+    (if (str/blank? name)
+      (error :invalid-block-name
+             (str "Invalid block \"" name "\"")
+             (strip-newline (current-line parser))
+             (line-num parser)
+             (+ start (count *open-delim*) 1)
+             {:block-name name})
+      (let [name' (keyword nil name)]
+        (-> (assoc parser :section [name'])
+            (parse-section-like pre start (partial nodes/->Block name')))))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (when-not (end? parser)
@@ -292,6 +335,8 @@
               \^ (parse-section-start parser pre start true)
               \& (parse-variable parser pre true)
               \> (parse-partial parser pre start)
+              \< (parse-parent parser pre start)
+              \$ (parse-block parser pre start)
               \! (parse-comment parser pre start)
               \= (parse-set-delimiters parser pre start)
               \{ (if (and (= *open-delim* default-open-delim)
