@@ -151,34 +151,35 @@
                (vreset! acc nil))
              (vswap! nodes conj x)))))))
 
-(defn- parse-section-start [parser pre start inverted?]
-  (let [name (extract-tag-content parser)
-        keys (parse-keys parser name)
-        children (make-node-buffer)
+(defn- parse-section-like [parser pre start ctor]
+  (let [buf (make-node-buffer)
         ;; Delimiters may be changed before SectionEnd arrives.
         ;; So we need to bind them lexically here to remember
         ;; what delimiters were actually used for this section-start tag
-        ;; in case of lambdas applied to the section
+        ;; in case of lambdas applied to the section-like node
         open *open-delim*
         close *close-delim*]
     (with-surrounding-whitespaces-processed parser pre start
       (fn [pre post]
         (letfn [(out' [x]
-                  (children x)
+                  (buf x)
                   (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
-                    (-> ((if inverted? nodes/->Inverted nodes/->Section)
-                         keys (children))
-                        (cond->
-                            (or (not= open default-open-delim)
-                                (not= close default-close-delim))
-                          (vary-meta assoc :open open :close close)
-                          (or pre post)
-                          (vary-meta assoc :pre pre :post post))
-                        ((:out parser)))))]
-          (-> parser
-              (assoc :out out' :section keys)
+                    (cond-> (ctor (buf))
+                      (or (not= open default-open-delim)
+                          (not= close default-close-delim))
+                      (vary-meta assoc :open open :close close)
+                      (or pre post)
+                      (vary-meta assoc :pre pre :post post)
+                      true ((:out parser)))))]
+          (-> (assoc parser :out out')
               (enable-indent-insertion)
               parse*))))))
+
+(defn- parse-section-start [parser pre start inverted?]
+  (let [name (extract-tag-content parser)
+        keys (parse-keys parser name)
+        ctor (partial (if inverted? nodes/->Inverted nodes/->Section) keys)]
+    (parse-section-like (assoc parser :section keys) pre start ctor)))
 
 (defn- parse-section-end [parser pre start]
   (let [name (extract-tag-content parser)
