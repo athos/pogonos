@@ -6,14 +6,15 @@
             [pogonos.core :as pogonos]))
 
 (defn- expand-spec-test [{:keys [desc expected template data partials]}]
-  (let [data' (reduce-kv (fn [m k v]
-                           (assoc m k
-                                  (if (and (map? v)
-                                           (= (:__tag__ v) "code"))
-                                    (read-string (str "(do " (:clojure v) ")"))
-                                    v)))
-                         {}
-                         data)]
+  (let [data' (cond->> data
+                (map? data)
+                (reduce-kv (fn [m k v]
+                             (assoc m k
+                                    (if (and (map? v)
+                                             (= (:__tag__ v) "code"))
+                                      (read-string (str "(do " (:clojure v) ")"))
+                                      v)))
+                           {}))]
    `(t/testing ~desc
       (t/is
        (= ~expected
