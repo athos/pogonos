@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- ([#17](https://github.com/athos/pogonos/pull/17)) Allow non-map values as top-level data for spec testing
+
 ## [0.2.0] - 2022-04-18
 ### Added
 - ([#6](https://github.com/athos/pogonos/pull/6)) New API to check template syntax
