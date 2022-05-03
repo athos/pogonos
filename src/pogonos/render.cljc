@@ -8,12 +8,14 @@
             [pogonos.stringify :as stringify])
   #?(:clj
      (:import [pogonos.nodes
-               Inverted Partial Root Section UnescapedVariable Variable])))
+               Block Inverted Parent Partial Root Section UnescapedVariable
+               Variable])))
 
 (def ^:dynamic *partials-resolver*)
 ;; TODO: Now it's just a mitigation for inefficiency around partials rendering.
 ;; There should be a more general caching mechanism in the future.
 (def ^:dynamic *partials-cache*)
+(def ^:dynamic *block-env* {})
 
 (defn escape [^String s]
   #?(:clj
@@ -60,6 +62,25 @@
                      #(render* ctx (comp out escape-fn) %))
         (out (escape-fn (str val)))))))
 
+(defn- render-nodes [ctx out nodes]
+  (doseq [node nodes]
+    (render* ctx out node)))
+
+(defn- render-partial [ctx out {partial-name :name :keys [indent]}]
+  (if-let [cached (get *partials-cache* [partial-name indent])]
+    (render* ctx out cached)
+    (when-let [r (partials/resolve *partials-resolver* partial-name)]
+      (let [buf (parse/make-node-buffer)]
+        (try
+          (parse/parse r buf {:source (name partial-name) :indent indent})
+          (let [node (nodes/->Root (buf))]
+            (render* ctx out node)
+            (when (partials/cacheable? *partials-resolver* partial-name)
+              (set! *partials-cache*
+                    (assoc *partials-cache* [partial-name indent] node))))
+          (finally
+            (reader/close r)))))))
+
 (defn render
   ([ctx out x]
    (render ctx out x {}))
@@ -74,8 +95,7 @@
 
   #?(:clj Root :cljs nodes/Root)
   (render [this ctx out]
-    (doseq [node (:body this)]
-      (render* ctx out node)))
+    (render-nodes ctx out (:body this)))
 
   #?(:clj Variable :cljs nodes/Variable)
   (render [this ctx out]
@@ -111,29 +131,26 @@
                            {:open-delim open :close-delim close}))
 
             :else
-            (doseq [node (:nodes this)]
-              (render* (conj ctx val) out node)))))
+            (render-nodes (conj ctx val) out (:nodes this)))))
 
   #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
     (let [val (lookup ctx (:keys this))]
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
-        (doseq [node (:nodes this)]
-          (render* ctx out node)))))
+        (render-nodes ctx out (:nodes this)))))
 
   #?(:clj Partial :cljs nodes/Partial)
-  (render [{partial-name :name :keys [indent]} ctx out]
-    (if-let [cached (get *partials-cache* [partial-name indent])]
-      (render* ctx out cached)
-      (when-let [r (partials/resolve *partials-resolver* partial-name)]
-        (let [buf (parse/make-node-buffer)]
-          (try
-            (parse/parse r buf {:source (name partial-name) :indent indent})
-            (let [node (nodes/->Root (buf))]
-              (render* ctx out node)
-              (when (partials/cacheable? *partials-resolver* partial-name)
-                (set! *partials-cache*
-                      (assoc *partials-cache* [partial-name indent] node))))
-            (finally
-              (reader/close r))))))))
+  (render [this ctx out]
+    (render-partial ctx out this))
+
+  #?(:clj Parent :cljs nodes/Parent)
+  (render [this ctx out]
+    (binding [*block-env* (merge (:args this) *block-env*)]
+      (render-partial ctx out this)))
+
+  #?(:clj Block :cljs nodes/Block)
+  (render [this ctx out]
+    (let [nodes (or (get *block-env* (:name this))
+                    (:nodes this))]
+      (render-nodes ctx out nodes))))
