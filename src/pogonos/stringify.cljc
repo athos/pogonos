@@ -4,8 +4,8 @@
             [pogonos.output :as output])
   #?(:clj
      (:import [pogonos.nodes
-               Comment Inverted Partial Section SectionEnd SetDelimiter
-               UnescapedVariable Variable])))
+               Block Comment Inverted Parent Partial Section SectionEnd
+               SetDelimiter UnescapedVariable Variable])))
 
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
@@ -23,6 +23,18 @@
     (out x)
     (proto/stringify x out)))
 
+(defn- stringify-tag [sigil content out]
+  (out *open-delim*)
+  (out sigil)
+  (out content)
+  (out *close-delim*))
+
+(defn- stringify-nodes [meta nodes out]
+  (binding [*open-delim* (or (:open meta) *open-delim*)
+            *close-delim* (or (:close meta) *close-delim*)]
+    (doseq [node nodes]
+      (stringify* node out))))
+
 (defn- stringify-section [sigil section out]
   (when-let [pre (:pre (meta section))]
     (out pre))
@@ -32,10 +44,7 @@
   (out *close-delim*)
   (when-let [post (:post (meta section))]
     (out post))
-  (binding [*open-delim* (or (:open (meta section)) *open-delim*)
-            *close-delim* (or (:close (meta section)) *close-delim*)]
-    (doseq [node (:nodes section)]
-      (stringify* node out))))
+  (stringify-nodes (meta section) (:nodes section) out))
 
 (extend-protocol proto/IStringifiable
   #?(:clj clojure.lang.PersistentVector
@@ -72,12 +81,25 @@
 
   #?(:clj Partial :cljs nodes/Partial)
   (stringify [this out]
-    (out *open-delim*)
-    (out ">")
-    (out (name (:name this)))
-    (out *close-delim*)
+    (stringify-tag ">" (name (:name this)) out)
     (when-let [post (:post (meta this))]
       (out post)))
+
+  #?(:clj Parent :cljs nodes/Parent)
+  (stringify [this out]
+    (stringify-tag "<" (name (:name this)) out)
+    (when-let [post (:post (meta this))]
+      (out post))
+    (stringify-nodes (meta this) (:nodes this) out))
+
+  #?(:clj Block :cljs nodes/Block)
+  (stringify [this out]
+    (when-let [pre (:pre (meta this))]
+      (out pre))
+    (stringify-tag "$" (name (:name this)) out)
+    (when-let [post (:post (meta this))]
+      (out post))
+    (stringify-nodes (meta this) (:nodes this) out))
 
   #?(:clj Comment :cljs nodes/Comment)
   (stringify [this out]
