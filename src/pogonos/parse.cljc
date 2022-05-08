@@ -151,37 +151,41 @@
                (vreset! acc nil))
              (vswap! nodes conj x)))))))
 
-(defn- parse-section-like [parser pre start ctor]
+(defn- parse-until-section-end [parser]
   (let [buf (make-node-buffer)
         ;; Delimiters may be changed before SectionEnd arrives.
         ;; So we need to bind them lexically here to remember
         ;; what delimiters were actually used for this section-start tag
         ;; in case of lambdas applied to the section-like node
         open *open-delim*
-        close *close-delim*]
-    (with-surrounding-whitespaces-processed parser pre start
-      (fn [pre post]
-        (letfn [(out' [x]
-                  (buf x)
-                  (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
-                    (cond-> (ctor (buf))
-                      (or (not= open default-open-delim)
-                          (not= close default-close-delim))
-                      (vary-meta assoc :open open :close close)
-                      pre
-                      (vary-meta assoc :pre pre)
-                      post
-                      (vary-meta assoc :post post)
-                      true ((:out parser)))))]
-          (-> (assoc parser :out out')
-              (enable-indent-insertion)
-              parse*))))))
+        close *close-delim*
+        out (fn [x]
+              (buf x)
+              (when (instance? #?(:clj SectionEnd :cljs nodes/SectionEnd) x)
+                (cond-> (buf)
+                  (or (not= open default-open-delim)
+                      (not= close default-close-delim))
+                  (vary-meta assoc :open open :close close)
+                  true ((:out parser)))))]
+    (-> (assoc parser :out out)
+        (enable-indent-insertion)
+        parse*)))
 
 (defn- parse-section-start [parser pre start inverted?]
   (let [name (extract-tag-content parser)
-        keys (parse-keys parser name)
-        ctor (partial (if inverted? nodes/->Inverted nodes/->Section) keys)]
-    (parse-section-like (assoc parser :section keys) pre start ctor)))
+        keys (parse-keys parser name)]
+    (with-surrounding-whitespaces-processed parser pre start
+      (fn [pre post]
+        (letfn [(out [nodes]
+                  (cond-> (with-meta
+                            (if inverted?
+                              (nodes/->Inverted keys nodes)
+                              (nodes/->Section keys nodes))
+                            (meta nodes))
+                    (or pre post)
+                    (vary-meta assoc :pre pre :post post)
+                    true ((:out parser))))]
+          (parse-until-section-end (assoc parser :section keys :out out)))))))
 
 (defn- parse-section-end [parser pre start]
   (let [name (extract-tag-content parser)
@@ -230,7 +234,9 @@
                         (when (instance? #?(:clj Block :cljs nodes/Block) node)
                           [(:name node) (:nodes node)])))
                      nodes)]
-    (cond-> (nodes/->Parent name indent params nodes)
+    (cond-> (with-meta
+              (nodes/->Parent name indent params nodes)
+              (meta nodes))
       post (vary-meta assoc :post post))))
 
 (defn- parse-parent [parser pre start]
@@ -243,13 +249,16 @@
              (+ start (count *open-delim*) 1)
              {:parent-name name})
       (let [name' (keyword nil name)
-            standalone? (standalone? parser pre start)
-            post (when standalone? (read-to-line-end parser))
-            indent (when standalone?
+            blank-leading? (and (= start (count pre)) (str/blank? pre))
+            indent (when blank-leading?
                      ;; same as partial
-                     (not-empty (str (:indent parser) pre)))]
-        (-> (assoc parser :section [name'])
-            (parse-section-like pre start (partial make-parent name' indent post)))))))
+                     (not-empty (str (:indent parser) pre)))
+            out (fn [nodes]
+                  (let [post (when (and blank-leading? (blank-trailing? parser))
+                               (read-to-line-end parser))]
+                    ((:out parser) (make-parent name' indent post nodes))))]
+        (emit parser pre)
+        (parse-until-section-end (assoc parser :section [name'] :out out))))))
 
 (defn- parse-block [parser pre start]
   (let [name (pstr/trim (extract-tag-content parser))]
@@ -260,9 +269,16 @@
              (line-num parser)
              (+ start (count *open-delim*) 1)
              {:block-name name})
-      (let [name' (keyword nil name)]
-        (-> (assoc parser :section [name'])
-            (parse-section-like pre start (partial nodes/->Block name')))))))
+      (let [name' (keyword nil name)
+            post (when (blank-trailing? parser)
+                   (read-to-line-end parser))
+            out (fn [nodes]
+                  (-> (nodes/->Block name' nodes)
+                      (with-meta (meta nodes))
+                      (cond-> post (vary-meta assoc :post post))
+                      ((:out parser))))]
+        (emit parser pre)
+        (parse-until-section-end (assoc parser :section [name'] :out out))))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (when-not (end? parser)
