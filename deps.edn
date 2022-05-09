@@ -13,8 +13,7 @@
            :coverage
            {:extra-deps {cloverage/cloverage {:mvn/version "1.2.3"}}
             :main-opts ["-m" "cloverage.coverage"
-                        "-p" "src" "-s" "test" "--codecov"
-                        "-e" "pogonos.reader"]}
+                        "-p" "src" "-s" "test" "--codecov"]}
            :shadow-cljs
            {:extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}}
             :main-opts ["-m" "shadow.cljs.devtools.cli"]}
