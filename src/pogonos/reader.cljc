@@ -34,44 +34,54 @@
     (make-string-reader this)))
 
 #?(:clj
-   (deftype FileReader
-       [^Reader reader
-        ^chars buf
-        ^:unsynchronized-mutable ^int offset
-        ^:unsynchronized-mutable ^int size]
-     proto/IReader
-     (read-line [this]
-       (loop [^StringBuilder sb nil]
-         (when (>= offset size)
-           (set! size (.read reader buf))
-           (set! offset (int 0)))
-         (if (neg? size)
-           (when sb (.toString sb))
-           (let [sb (or sb (StringBuilder.))
-                 i (int
-                    (loop [i offset]
-                      (if (< i size)
-                        (if (= (aget buf i) \newline)
-                          (inc i)
-                          (recur (inc i)))
-                        -1)))]
-             (if (>= i 0)
-               (do (.append sb buf offset (- i offset))
-                   (set! offset i)
-                   (.toString sb))
-               (do (.append sb buf offset (- size offset))
-                   (set! offset size)
-                   (recur sb)))))))
-     (end? [this]
-       (or (and (>= offset size)
-                (< size (count buf)))
-           (neg? size)))
-     (close [this]
-       (.close reader))))
+   (do
+     (defmacro ! [x]
+       #?(:bb `@~x :clj x))
+
+     (defmacro update! [x v]
+       #?(:bb `(vreset! ~x ~v)
+          :clj `(set! ~x ~v)))
+
+     (deftype FileReader
+              [^Reader reader
+               ^chars buf
+               #?(:bb offset :clj ^:unsynchronized-mutable ^int offset)
+               #?(:bb size :clj ^:unsynchronized-mutable ^int size)]
+       proto/IReader
+       (read-line [this]
+         (loop [^StringBuilder sb nil]
+           (when (>= (! offset) (! size))
+             (update! size (.read reader buf))
+             (update! offset (int 0)))
+           (if (neg? (! size))
+             (when sb (.toString sb))
+             (let [sb (or sb (StringBuilder.))
+                   i (int
+                      (loop [i (! offset)]
+                        (if (< i (! size))
+                          (if (= (aget buf i) \newline)
+                            (inc i)
+                            (recur (inc i)))
+                          -1)))]
+               (if (>= i 0)
+                 (do (.append sb buf (! offset) (- i (! offset)))
+                     (update! offset i)
+                     (.toString sb))
+                 (do (.append sb buf (! offset) (- (! size) (! offset)))
+                     (update! offset (! size))
+                     (recur sb)))))))
+       (end? [this]
+         (or (and (>= (! offset) (! size))
+                  (< (! size) (count buf)))
+             (neg? (! size))))
+       (close [this]
+         (.close reader)))))
 
 #?(:clj
    (defn ^pogonos.reader.FileReader make-file-reader [file]
-     (FileReader. (io/reader file) (char-array 256) 0 0)))
+     #?(:bb (FileReader. (io/reader file) (char-array 256)
+                         (volatile! 0) (volatile! 0))
+        :clj (FileReader. (io/reader file) (char-array 256) 0 0))))
 
 #?(:clj
    (extend-protocol proto/ToReader

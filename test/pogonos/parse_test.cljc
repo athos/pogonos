@@ -28,6 +28,9 @@
      (parse/parse (reader/make-string-reader s) out opts)
      (out))))
 
+(defn- meta-for-whitespaces [x]
+  (not-empty (select-keys (meta x) [:pre :post])))
+
 (deftest parse-test
   (testing "text"
     (are [input expected] (= expected (parse input))
@@ -152,8 +155,9 @@
                [" lmn \n" (nodes/->SectionEnd [:foo])])
               " xyz"]
              result))
-      (is (= {:pre "  " :post " \n"} (meta section)))
-      (is (= {:pre " " :post "  \n"} (meta (second (:nodes section))))))
+      (is (= {:pre "  " :post " \n"} (meta-for-whitespaces section)))
+      (is (= {:pre " " :post "  \n"}
+             (meta-for-whitespaces (second (:nodes section))))))
     (let [[_ section :as result] (parse "abc \n  {{^foo}} \n lmn \n {{/foo}}  \n xyz")]
       (is (= ["abc \n"
               (nodes/->Inverted
@@ -161,8 +165,9 @@
                [" lmn \n" (nodes/->SectionEnd [:foo])])
               " xyz"]
              result))
-      (is (= {:pre "  " :post " \n"} (meta section)))
-      (is (= {:pre " " :post "  \n"} (meta (second (:nodes section))))))
+      (is (= {:pre "  " :post " \n"} (meta-for-whitespaces section)))
+      (is (= {:pre " " :post "  \n"}
+             (meta-for-whitespaces (second (:nodes section))))))
     (are [input error-type] (= error-type
                                (try
                                  (parse input)
@@ -182,19 +187,19 @@
       "{{! foo\nbar\nbaz }}" [(nodes/->Comment [" foo\n" "bar\n" "baz "])])
     (let [[comment :as result] (parse "abc {{! foo }} xyz")]
       (is (= ["abc " (nodes/->Comment [" foo "]) " xyz"] result))
-      (is (nil? (meta comment))))
+      (is (nil? (meta-for-whitespaces comment))))
     (let [[comment :as result] (parse "abc {{! foo\nbar\nbaz }} xyz")]
       (is (= ["abc " (nodes/->Comment [" foo\n" "bar\n" "baz "]) " xyz"] result))
-      (is (nil? (meta comment))))
+      (is (nil? (meta-for-whitespaces comment))))
     (let [[comment :as result] (parse "  {{! foo }}   ")]
       (is (= [(nodes/->Comment [" foo "])] result))
-      (is (= {:pre "  " :post "   "} (meta comment))))
+      (is (= {:pre "  " :post "   "} (meta-for-whitespaces comment))))
     (let [[comment :as result] (parse "  {{! foo\nbar\nbaz }}  \n")]
       (is (= [(nodes/->Comment [" foo\n" "bar\n" "baz "])] result))
-      (is (= {:pre "  " :post "  \n"} (meta comment))))
+      (is (= {:pre "  " :post "  \n"} (meta-for-whitespaces comment))))
     (let [[_ comment :as result] (parse "abc \n  {{! foo\nbar\nbaz }}  \nxyz\n")]
       (is (= ["abc \n" (nodes/->Comment [" foo\n" "bar\n" "baz "]) "xyz\n"] result))
-      (is (= {:pre "  " :post "  \n"} (meta comment))))
+      (is (= {:pre "  " :post "  \n"} (meta-for-whitespaces comment))))
     (are [input error-type] (= error-type
                                (try
                                  (parse input)
@@ -211,16 +216,16 @@
       "{{> foo }}" [(nodes/->Partial :foo nil)])
     (let [[_ partial :as result] (parse "abc  {{>foo}}  xyz")]
       (is (= ["abc  " (nodes/->Partial :foo nil) "  xyz"] result))
-      (is (nil? (meta partial))))
+      (is (nil? (meta-for-whitespaces partial))))
     (let [[_ partial :as result] (parse "   {{>foo}}  ")]
       (is (= ["   " (nodes/->Partial :foo "   ")] result))
-      (is (= {:post "  "} (meta partial))))
+      (is (= {:post "  "} (meta-for-whitespaces partial))))
     (let [[_ partial :as result] (parse "   {{>foo}}  " {:indent "    "})]
       (is (= ["   " (nodes/->Partial :foo "       ")] result))
-      (is (= {:post "  "} (meta partial))))
+      (is (= {:post "  "} (meta-for-whitespaces partial))))
     (let [[_ partial :as result] (parse "abc  {{>foo}}  xyz" {:indent "    "})]
       (is (= ["abc  " (nodes/->Partial :foo nil) "  xyz"] result))
-      (is (nil? (meta partial))))
+      (is (nil? (meta-for-whitespaces partial))))
     (are [input error-type] (= error-type
                                (try
                                  (parse input)
@@ -234,12 +239,12 @@
       (is (= ["abc " (nodes/->SetDelimiter "<%" "%>")
               " " (nodes/->Variable [:foo] false) " xyz"]
              result))
-      (is (nil? (meta node))))
+      (is (nil? (meta-for-whitespaces node))))
     (let [[_ node :as result] (parse "abc \n  {{= <% %> =}}  \n <% foo %> xyz")]
       (is (= ["abc \n" (nodes/->SetDelimiter "<%" "%>")
               " " (nodes/->Variable [:foo] false) " xyz"]
              result))
-      (is (= {:pre "  " :post "  \n"} (meta node))))
+      (is (= {:pre "  " :post "  \n"} (meta-for-whitespaces node))))
     (are [input expected] (= expected (parse input))
       "{{=<% %>=}}<%=<< >>=%><<foo>>"
       [(nodes/->SetDelimiter "<%" "%>")
