@@ -54,6 +54,8 @@ jobs:
       run: |
         npx shadow-cljs release test
         npx karma start --single-run
+    - name: Run tests on Babashka
+      run: bb test
     - name: Measure test coverage
       run: clojure -M:test:coverage
     - name: Upload coverage report to CodeCov
