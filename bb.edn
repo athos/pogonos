@@ -1,1 +1,4 @@
-{:paths ["src"]}
+{:paths ["src" "test" "test-resources"]
+ :deps {org.clojure/data.json {:mvn/version "2.4.0"}}
+ :tasks
+ {test pogonos.test-runner/-main}}
