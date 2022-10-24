@@ -5,7 +5,7 @@
 
 (extend-protocol IVisibility
   #?(:clj Object :cljs default)
-  (visible? [thihs] true))
+  (visible? [_] true))
 
 (defrecord Root [body])
 
@@ -23,8 +23,8 @@
 
 (defrecord Comment [body]
   IVisibility
-  (visible? [this] false))
+  (visible? [_] false))
 
 (defrecord SetDelimiter [open close]
   IVisibility
-  (visible? [this] false))
+  (visible? [_] false))

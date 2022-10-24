@@ -3,21 +3,22 @@
             #?(:clj [clojure.java.io :as io])
             [pogonos.core :as pg]))
 
-(def ^:private demo-file "templates/demo.mustache")
-(def ^:private broken-file "templates/broken.mustache")
-
-(def ^:private data
-  {:header "Colors"
-   :items [{:name "red", :first true, :url "#Red"}
-           {:name "green", :link true, :url "#Green"}
-           {:name "blue", :link true, :url "#Blue"}]
-   :empty false})
-
 #?(:clj
-   (deftest parse-test
-     (is (= (pg/parse-string (slurp (io/resource demo-file)))
-            (pg/parse-file (io/as-file (io/resource demo-file)))
-            (pg/parse-resource demo-file)))))
+   (do
+     (def ^:private demo-file "templates/demo.mustache")
+     (def ^:private broken-file "templates/broken.mustache")
+
+     (def ^:private data
+       {:header "Colors"
+        :items [{:name "red", :first true, :url "#Red"}
+                {:name "green", :link true, :url "#Green"}
+                {:name "blue", :link true, :url "#Blue"}]
+        :empty false})
+
+     (deftest parse-test
+       (is (= (pg/parse-string (slurp (io/resource demo-file)))
+              (pg/parse-file (io/as-file (io/resource demo-file)))
+              (pg/parse-resource demo-file))))))
 
 (deftest check-test
   (is (nil? (pg/check-string "Hello, {{name}}!")))
