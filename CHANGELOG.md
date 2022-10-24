@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- ([#20](https://github.com/athos/pogonos/pull/20)) Babashka support
+
 ### Fixed
 - ([#17](https://github.com/athos/pogonos/pull/17)) Allow non-map values as top-level data for spec testing
 
