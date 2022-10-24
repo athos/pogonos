@@ -14,11 +14,12 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-    - name: Setup Clojure CLI & Babashka
+    - name: Setup Clojure CLI & Babashka & clj-kondo
       uses: DeLaGuardo/setup-clojure@9.5
       with:
         cli: latest
         bb: latest
+        clj-kondo: latest
     - name: Cache deps
       uses: actions/cache@v3
       with:
@@ -40,8 +41,10 @@ jobs:
       run: |
         clojure -A:check:test:cljs:coverage -P
         npm install
-    - name: Run check
-      run: clojure -M:check
+    - name: Run check & clj-kondo
+      run: |
+        clojure -M:check
+        clj-kondo --lint src:test
     - name: Run CLJ tests
       run: clojure -M:test
     - name: Run CLJS tests on Node
