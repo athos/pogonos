@@ -11,7 +11,7 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 - Fast but clean implementation
 - User-friendly error messages for parsing errors
 - Handy API for use from the CLI
-- Supports Clojure, ClojureScript and self-hosted ClojureScript
+- Supports Clojure, ClojureScript, self-hosted ClojureScript and Babashka
 
 ## Project status
 
