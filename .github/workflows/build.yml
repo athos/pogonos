@@ -14,10 +14,11 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-    - name: Setup Clojure CLI
-      uses: DeLaGuardo/setup-clojure@3.7
+    - name: Setup Clojure CLI & Babashka
+      uses: DeLaGuardo/setup-clojure@9.5
       with:
-        tools-deps: latest
+        cli: latest
+        bb: latest
     - name: Cache deps
       uses: actions/cache@v3
       with:
@@ -53,6 +54,8 @@ jobs:
       run: |
         npx shadow-cljs release test
         npx karma start --single-run
+    - name: Run tests on Babashka
+      run: bb test
     - name: Measure test coverage
       run: clojure -M:test:coverage
     - name: Upload coverage report to CodeCov
