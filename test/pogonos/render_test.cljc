@@ -170,4 +170,35 @@
     - name: baz
       children:
   - name: bar2
+    children:"))
+  (testing "dynamic partials"
+    (are [template ctx partials expected]
+        (= expected (render template ctx partials))
+      ["[" (nodes/->DynamicPartial [:partial] nil) "]"]
+      {:partial "foo" :x 42}
+      {:foo "{{x}}"}
+      "[42]"
+
+      ["\\\n " (nodes/->DynamicPartial [:partial] " ") "\n/"]
+      {:partial :p}
+      {:p "|\n  {{>q}}\n\n|"
+       :q "]"}
+      "\\\n |\n   ]\n |\n/"
+
+      [(nodes/->DynamicPartial [:partial] nil)]
+      {:partial 'p
+       :name "foo"
+       :children
+       [{:name "bar1"
+         :children [{:name "baz" :children []}]}
+        {:name "bar2"
+         :children []}]}
+      {:p "- name: {{name}}\n  children:{{#children}}\n  {{>*partial}}\n{{/children}}"}
+      "- name: foo
+  children:
+  - name: bar1
+    children:
+    - name: baz
+      children:
+  - name: bar2
     children:")))
