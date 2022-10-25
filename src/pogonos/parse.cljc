@@ -200,25 +200,36 @@
                {:opening-delimiter *open-delim* :closing-delimiter *close-delim*
                 :expected expected :actual actual})))))
 
+(defn- parse-partial* [parser pre start ctor]
+  (let [standalone? (standalone? parser pre start)
+        post (when standalone? (read-to-line-end parser))
+        indent (when standalone?
+                 ;; if standalone, append current indent to previous one
+                 ;; otherwise, ignore both current and previous indents
+                 (not-empty (str (:indent parser) pre)))]
+    (emit parser (not-empty pre))
+    (-> (ctor indent)
+        (cond-> post (with-meta {:post post}))
+        ((:out parser)))))
+
 (defn- parse-partial [parser pre start]
   (let [name (pstr/trim (extract-tag-content parser))]
-    (if (str/blank? name)
-      (error :invalid-partial-name
-             (str "Invalid partial \"" name "\"")
-             (strip-newline (current-line parser))
-             (line-num parser)
-             (+ start (count *open-delim*) 1)
-             {:partial-name name})
-      (let [standalone? (standalone? parser pre start)
-            post (when standalone? (read-to-line-end parser))
-            indent (when standalone?
-                     ;; if standalone, append current indent to previous one
-                     ;; otherwise, ignore both current and previous indents
-                     (not-empty (str (:indent parser) pre)))]
-        (emit parser (not-empty pre))
-        (-> (nodes/->Partial (keyword nil name) indent)
-            (cond-> post (with-meta {:post post}))
-            ((:out parser)))))))
+    (cond (str/blank? name)
+          (error :invalid-partial-name
+                 (str "Invalid partial \"" name "\"")
+                 (strip-newline (current-line parser))
+                 (line-num parser)
+                 (+ start (count *open-delim*) 1)
+                 {:partial-name name})
+
+          (= (nth name 0) \*)
+          (let [name' (pstr/trim (subs name 1))
+                keys (parse-keys parser name')]
+            (parse-partial* parser pre start #(nodes/->DynamicPartial keys %)))
+
+          :else
+          (parse-partial* parser pre start
+                          #(nodes/->Partial (keyword nil name) %)))))
 
 (defn- parse-comment [parser pre start]
   (if-let [comment (when-not (end? parser)
