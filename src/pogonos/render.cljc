@@ -70,7 +70,7 @@
 
 (extend-protocol proto/IRenderable
   #?(:clj Object :cljs object)
-  (render [this ctx out])
+  (render [_ _ctx _out])
 
   #?(:clj Root :cljs nodes/Root)
   (render [this ctx out]

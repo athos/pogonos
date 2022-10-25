@@ -34,7 +34,7 @@
     (is (nil? (proto/read-line r)))))
 
 #?(:clj
-   (defn- ^FileReader make-file-reader [content]
+   (defn- make-file-reader ^FileReader [content]
      (-> (doto (File/createTempFile "tmp" nil)
            (spit content))
          (reader/make-file-reader))))

@@ -6,8 +6,8 @@
 
 (extend-protocol proto/IPartialsResolver
   nil
-  (resolve [this name])
-  (cacheable? [this name] false))
+  (resolve [_ _name])
+  (cacheable? [_ _name] false))
 
 #?(:clj
    (defn- resolve-resource-from-base-path [base-path filename]
@@ -20,13 +20,13 @@
 #?(:clj
    (defrecord ResourcePartialsResolver [base-paths suffix]
      proto/IPartialsResolver
-     (resolve [this partial-name]
+     (resolve [_ partial-name]
        (let [filename (cond-> (name partial-name)
                         suffix (str suffix))]
          (if (seq base-paths)
            (some #(resolve-resource-from-base-path % filename) base-paths)
            (resolve-resource-from-base-path nil filename))))
-     (cacheable? [this partial-name] true)))
+     (cacheable? [_ _partial-name] true)))
 
 #?(:clj
    (defn resource-partials
@@ -50,14 +50,14 @@
 #?(:clj
    (defrecord FilePartialsResolver [base-paths suffix]
      proto/IPartialsResolver
-     (resolve [this partial-name]
+     (resolve [_ partial-name]
        (let [filename (cond-> (name partial-name)
                         suffix (str suffix))]
          (if (seq base-paths)
            (some #(resolve-file-from-base-path % filename)
                  base-paths)
            (resolve-file-from-base-path nil filename))))
-     (cacheable? [this partial-name] true)))
+     (cacheable? [_ _partial-name] true)))
 
 #?(:clj
    (defn file-partials
@@ -72,9 +72,9 @@
 
 (defrecord FnPartialsResolver [f]
   proto/IPartialsResolver
-  (resolve [this name]
+  (resolve [_ name]
     (some-> (f name) reader/->reader))
-  (cacheable? [this name] true))
+  (cacheable? [_ _name] true))
 
 (defn fn-partials [f]
   (->FnPartialsResolver f))
@@ -92,9 +92,9 @@
 
 (defrecord CompositePartialsResolver [resolvers]
   proto/IPartialsResolver
-  (resolve [this name]
+  (resolve [_ name]
     (some #(proto/resolve % name) resolvers))
-  (cacheable? [this name]
+  (cacheable? [_ name]
     (when-first [resolver (filter #(proto/resolve % name) resolvers)]
       (proto/cacheable? resolver name))))
 
@@ -109,9 +109,9 @@
 (defn with-caching-disabled [resolver]
   (let [resolver (->resolver resolver)]
     (reify proto/IPartialsResolver
-      (resolve [this name]
+      (resolve [_ name]
         (proto/resolve resolver name))
-      (cacheable? [this name] false))))
+      (cacheable? [_ _name] false))))
 
 (defn resolve [resolver name]
   (proto/resolve resolver name))

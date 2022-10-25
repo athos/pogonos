@@ -15,17 +15,17 @@
 
 (deftype StringReader [src ^:unsynchronized-mutable offset]
   proto/IReader
-  (read-line [this]
+  (read-line [_]
     (when (< offset (count src))
       (let [i (str/index-of src "\n" offset)
             offset' (or (some-> i inc) (count src))
             ret (subs src offset offset')]
         (set! offset offset')
         ret)))
-  (end? [this] (>= offset (count src)))
-  (close [this]))
+  (end? [_] (>= offset (count src)))
+  (close [_]))
 
-(defn ^pogonos.reader.StringReader make-string-reader [s]
+(defn make-string-reader ^pogonos.reader.StringReader [s]
   (StringReader. s 0))
 
 (extend-protocol proto/ToReader
@@ -48,7 +48,7 @@
                #?(:bb offset :clj ^:unsynchronized-mutable ^int offset)
                #?(:bb size :clj ^:unsynchronized-mutable ^int size)]
        proto/IReader
-       (read-line [this]
+       (read-line [_]
          (loop [^StringBuilder sb nil]
            (when (>= (! offset) (! size))
              (update! size (.read reader buf))
@@ -70,15 +70,15 @@
                  (do (.append sb buf (! offset) (- (! size) (! offset)))
                      (update! offset (! size))
                      (recur sb)))))))
-       (end? [this]
+       (end? [_]
          (or (and (>= (! offset) (! size))
                   (< (! size) (count buf)))
              (neg? (! size))))
-       (close [this]
+       (close [_]
          (.close reader)))))
 
 #?(:clj
-   (defn ^pogonos.reader.FileReader make-file-reader [file]
+   (defn make-file-reader ^pogonos.reader.FileReader [file]
      #?(:bb (FileReader. (io/reader file) (char-array 256)
                          (volatile! 0) (volatile! 0))
         :clj (FileReader. (io/reader file) (char-array 256) 0 0))))
@@ -118,22 +118,22 @@
      ^:unsynchronized-mutable lnum
      ^:unsynchronized-mutable cnum]
   ILineBufferingReader
-  (set-line! [this l]
+  (set-line! [_ l]
     (set! line l))
-  (set-line-num! [this n]
+  (set-line-num! [_ n]
     (set! lnum n))
-  (set-col-num! [this n]
+  (set-col-num! [_ n]
     (set! cnum n))
-  (line [this] line)
-  (line-num [this] lnum)
-  (col-num [this] cnum)
-  (base-reader [this] in)
+  (line [_] line)
+  (line-num [_] lnum)
+  (col-num [_] cnum)
+  (base-reader [_] in)
   proto/IReader
   (read-line [this]
     (read-line this))
-  (end? [this]
+  (end? [_]
     (proto/end? in))
-  (close [this]
+  (close [_]
     (proto/close in)))
 
 (defn make-line-buffering-reader [in]
