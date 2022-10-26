@@ -234,6 +234,31 @@
                                    (::error/type (ex-data e)))))
       "{{>partial" :missing-closing-delimiter
       "{{>}}" :invalid-partial-name))
+  (testing "dynamic partials"
+    (are [input expected] (= expected (parse input))
+      "{{>*foo}}" [(nodes/->DynamicPartial [:foo] nil)]
+      "{{>* foo }}" [(nodes/->DynamicPartial [:foo] nil)]
+      "{{> * foo }}" [(nodes/->DynamicPartial [:foo] nil)])
+    (let [[_ partial :as result] (parse "abc  {{>*foo}}  xyz")]
+      (is (= ["abc  " (nodes/->DynamicPartial [:foo] nil) "  xyz"] result))
+      (is (nil? (meta-for-whitespaces partial))))
+    (let [[_ partial :as result] (parse "   {{>*foo}}  ")]
+      (is (= ["   " (nodes/->DynamicPartial [:foo] "   ")] result))
+      (is (= {:post "  "} (meta-for-whitespaces partial))))
+    (let [[_ partial :as result] (parse "   {{>*foo}}  " {:indent "    "})]
+      (is (= ["   " (nodes/->DynamicPartial [:foo] "       ")] result))
+      (is (= {:post "  "} (meta-for-whitespaces partial))))
+    (let [[_ partial :as result] (parse "abc  {{>*foo}}  xyz" {:indent "    "})]
+      (is (= ["abc  " (nodes/->DynamicPartial [:foo] nil) "  xyz"] result))
+      (is (nil? (meta-for-whitespaces partial))))
+    (are [input error-type] (= error-type
+                               (try
+                                 (parse input)
+                                 nil
+                                 (catch #?(:clj Exception :cljs :default) e
+                                   (::error/type (ex-data e)))))
+      "{{>*partial" :missing-closing-delimiter
+      "{{>*}}" :invalid-variable-name))
   (testing "set delimiters"
     (let [[_ node :as result] (parse "abc {{=<% %>=}} <%foo%> xyz")]
       (is (= ["abc " (nodes/->SetDelimiter "<%" "%>")

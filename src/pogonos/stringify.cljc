@@ -4,8 +4,8 @@
             [pogonos.output :as output])
   #?(:clj
      (:import [pogonos.nodes
-               Comment Inverted Partial Section SectionEnd SetDelimiter
-               UnescapedVariable Variable])))
+               Comment DynamicPartial Inverted Partial Section SectionEnd
+               SetDelimiter UnescapedVariable Variable])))
 
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
@@ -75,6 +75,15 @@
     (out *open-delim*)
     (out ">")
     (out (name (:name this)))
+    (out *close-delim*)
+    (when-let [post (:post (meta this))]
+      (out post)))
+
+  #?(:clj DynamicPartial :cljs nodes/DynamicPartial)
+  (stringify [this out]
+    (out *open-delim*)
+    (out ">*")
+    (stringify-keys (:keys this) out)
     (out *close-delim*)
     (when-let [post (:post (meta this))]
       (out post)))

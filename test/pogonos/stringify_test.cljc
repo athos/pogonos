@@ -71,6 +71,37 @@
         (nodes/->Partial :x "  ")
         {:post "  \n"})
       "<%>x%>  \n"))
+  (testing "dynamic partials"
+    (are [input expected] (= expected (stringify input))
+      (nodes/->DynamicPartial [:x] nil) "{{>*x}}"
+      (nodes/->DynamicPartial [:x] "") "{{>*x}}"
+      (nodes/->DynamicPartial [:x] " ") "{{>*x}}"
+      (nodes/->DynamicPartial [:x :y] nil) "{{>*x.y}}"
+      (nodes/->DynamicPartial [:x :y :z] nil) "{{>*x.y.z}}"
+      (with-meta
+        (nodes/->DynamicPartial [:x] nil)
+        {:post "  \n"})
+      "{{>*x}}  \n"
+
+      (with-meta
+        (nodes/->DynamicPartial [:x :y] "  ")
+        {:post "  \n"})
+      "{{>*x.y}}  \n")
+    (are [input expected] (= expected (stringify input "<%" "%>"))
+      (nodes/->DynamicPartial [:x] nil) "<%>*x%>"
+      (nodes/->DynamicPartial [:x] "") "<%>*x%>"
+      (nodes/->DynamicPartial [:x] " ") "<%>*x%>"
+      (nodes/->DynamicPartial [:x :y] nil) "<%>*x.y%>"
+      (nodes/->DynamicPartial [:x :y :z] nil) "<%>*x.y.z%>"
+      (with-meta
+        (nodes/->DynamicPartial [:x] nil)
+        {:post "  \n"})
+      "<%>*x%>  \n"
+
+      (with-meta
+        (nodes/->DynamicPartial [:x :y] "  ")
+        {:post "  \n"})
+      "<%>*x.y%>  \n"))
   (testing "comments"
     (are [input expected] (= expected (stringify input))
       (nodes/->Comment []) "{{!}}"

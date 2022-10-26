@@ -21,6 +21,8 @@
 
 (defrecord Partial [name indent])
 
+(defrecord DynamicPartial [keys indent])
+
 (defrecord Comment [body]
   IVisibility
   (visible? [_] false))

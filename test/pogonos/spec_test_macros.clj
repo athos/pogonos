@@ -29,5 +29,8 @@
 (defmacro import-spec-tests []
   `(do ~@(for [file (->> (io/file (io/resource "mustache-spec/specs"))
                          file-seq
-                         (filter #(str/ends-with? (.getName %) ".json")))]
+                         (filter #(str/ends-with? (.getName %) ".json"))
+                         ;; currently, inheritance is not supported
+                         ;; so exclude test cases for that feature for now
+                         (remove #(= (.getName %) "~inheritance.json")))]
            (expand-spec-tests file))))

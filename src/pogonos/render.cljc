@@ -8,7 +8,8 @@
             [pogonos.stringify :as stringify])
   #?(:clj
      (:import [pogonos.nodes
-               Inverted Partial Root Section UnescapedVariable Variable])))
+               DynamicPartial Inverted Partial Root
+               Section UnescapedVariable Variable])))
 
 (def ^:dynamic *partials-resolver*)
 ;; TODO: Now it's just a mitigation for inefficiency around partials rendering.
@@ -120,20 +121,33 @@
       (when (or (not val)
                 (and (coll? val) (sequential? val) (empty? val)))
         (doseq [node (:nodes this)]
-          (render* ctx out node)))))
+          (render* ctx out node))))))
 
+(defn- render-partial [ctx partial-name indent out]
+  (if-let [cached (get *partials-cache* [partial-name indent])]
+    (render* ctx out cached)
+    (when-let [r (partials/resolve *partials-resolver* partial-name)]
+      (let [buf (parse/make-node-buffer)]
+        (try
+          (parse/parse r buf {:source (name partial-name) :indent indent})
+          (let [node (nodes/->Root (buf))]
+            (render* ctx out node)
+            (when (partials/cacheable? *partials-resolver* partial-name)
+              (set! *partials-cache*
+                    (assoc *partials-cache* [partial-name indent] node))))
+          (finally
+            (reader/close r)))))))
+
+(extend-protocol proto/IRenderable
   #?(:clj Partial :cljs nodes/Partial)
   (render [{partial-name :name :keys [indent]} ctx out]
-    (if-let [cached (get *partials-cache* [partial-name indent])]
-      (render* ctx out cached)
-      (when-let [r (partials/resolve *partials-resolver* partial-name)]
-        (let [buf (parse/make-node-buffer)]
-          (try
-            (parse/parse r buf {:source (name partial-name) :indent indent})
-            (let [node (nodes/->Root (buf))]
-              (render* ctx out node)
-              (when (partials/cacheable? *partials-resolver* partial-name)
-                (set! *partials-cache*
-                      (assoc *partials-cache* [partial-name indent] node))))
-            (finally
-              (reader/close r))))))))
+    (render-partial ctx partial-name indent out))
+
+  #?(:clj DynamicPartial :cljs nodes/DynamicPartial)
+  (render [{:keys [keys indent]} ctx out]
+    (let [val (lookup ctx keys)
+          partial (cond (keyword? val) val
+                        (string? val) (keyword nil val)
+                        (symbol? val) (keyword (namespace val) (name val))
+                        :else val)]
+      (render-partial ctx partial indent out))))

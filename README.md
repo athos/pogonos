@@ -7,7 +7,7 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 
 ## Features
 
-- Completely compliant to the [Mustache spec](https://github.com/mustache/spec), including lambdas
+- Compliant to the [Mustache spec](https://github.com/mustache/spec) v1.3.0 including lambdas and dynamic partials
 - Fast but clean implementation
 - User-friendly error messages for parsing errors
 - Handy API for use from the CLI
