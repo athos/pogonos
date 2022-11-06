@@ -22,4 +22,11 @@
             {org.clojure/clojurescript {:mvn/version "1.11.4"}}}
            :test-cljs
            {:main-opts ["-m" "cljs.main" "-re" "node"
-                        "-m" "pogonos.test-runner"]}}}
+                        "-m" "pogonos.test-runner"]}
+           :build
+           {:deps
+            {io.github.clojure/tools.build
+             {:git/tag "v0.8.3" :git/sha "0d20256"}
+             io.github.seancorfield/build-clj
+             {:git/tag "v0.8.3" :git/sha "7ac1f8d"}}
+            :ns-default build}}}

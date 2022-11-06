@@ -3,8 +3,8 @@
 /checkouts
 /node_modules
 profiles.clj
-pom.xml
-pom.xml.asc
+/pom.xml
+/pom.xml.asc
 *.jar
 *.class
 /.cpcache
