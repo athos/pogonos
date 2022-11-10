@@ -25,7 +25,28 @@
    - :data       Map of the values passed to the template
    - :data-file  If specified, reads an edn map from the file specified by that
                  path and pass it to the template"
-  {:added "0.2.0"}
+  {:added "0.2.0"
+   :org.babashka/cli
+   {:spec
+    {:string
+     {:desc "Renders the given template string",
+      :ref "<template string>", :coerce :string, :alias :s}
+     :file
+     {:desc "Renders the specified template file",
+      :ref "<file>", :coerce :string, :alias :f}
+     :resource
+     {:desc "Renders the specified template resource on the classpath",
+      :ref "<resource path>", :coerce :string, :alias :r}
+     :output
+     {:desc "Path to the output file. If not specified, the rendering result will be emitted to stdout by default."
+      :ref "<file>", :coerce :string, :alias :o}
+     :data
+     {:desc "Map of the values passed to the template",
+      :ref "<edn>", :coerce :edn, :alias :d}
+     :data-file
+     {:desc "If specified, reads an edn map from the file specified by that path and pass it to the template",
+      :ref "<file>", :coerce :string, :alias :D}}
+    :order [:string :file :resource :output :data :data-file]}}
   [{:keys [string file resource data data-file output] :as opts}]
   (let [data (or (when data-file
                    (with-open [r (-> (io/reader (str data-file))
@@ -127,7 +148,33 @@
   the following options:
    - :only-show-errors         Hides progress messages
    - :suppress-verbose-errors  Suppresses verbose error messages"
-  {:added "0.2.0"}
+  {:added "0.2.0"
+   :org.babashka/cli
+   {:spec
+    {:string
+     {:desc "Checks the given template string",
+      :ref "<template string>", :coerce :string, :alias :s}
+     :file
+     {:desc "Checks the specified template file(s)",
+      :ref "<file>", :coerce :string, :alias :f}
+     :dir
+     {:desc "Checks the template files in the specified directory",
+      :ref "<dir>", :coerce :string, :alias :d}
+     :resource
+     {:desc "Checks the specified template resource(s) on the classpath",
+      :ref "<resource path>", :coerce :string, :alias :r}
+     :include-regex
+     {:desc "Regex pattern for paths of templates to be checked",
+      :ref "<regex>", :coerce :string, :alias :i}
+     :exclude-regex
+     {:desc "Regex pattern for paths of templates not to be checked",
+      :ref "<regex>", :coerce :string, :alias :e}
+     :only-show-errors
+     {:desc "Hides progress messages", :coerce :boolean, :alias :S}
+     :suppress-verbose-errors
+     {:desc "Suppress verbose error messages" :coerce :boolean, :alias :E}}
+    :order [:string :file :dir :resource
+            :only-show-errors :suppress-verbose-errors]}}
   [{:keys [string file dir resource on-failure] :or {on-failure :exit} :as opts}]
   (binding [*errors* []]
     (cond string (with-error-handling opts #(pg/check-string string opts))
