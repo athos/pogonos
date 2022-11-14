@@ -28,6 +28,7 @@ extension points (such as readers, outputs, AST nodes), are subject to change.
   - [Partials](#partials)
   - [Error messages](#error-messages)
   - [CLI usage](#cli-usage)
+  - [Babashka support](#babashka-support)
 
 ## Installation
 
@@ -398,6 +399,44 @@ For example, the following command will check three template files named `foo.mu
 ```sh
 $ clojure -X:template check :file '"foo.mustache:bar.mustache:baz.mustache"'
 ```
+
+### Babashka support
+
+Pogonos 0.2.1+ supports Babashka. It's supported in the following three ways:
+
+1. All the public function provided in `pogonos.core` can be used on Babashka, just like on the JVM
+2. The API for the CLI usage can also be used on Babashka
+3. Pogonos provides a standalone command that can be installed with [`bbin`](https://github.com/babashka/bbin) and works just like the [CLI tool](#cli-usage)
+
+The following sections will focus on 3.
+
+#### Installation
+
+Pogonos provides a standalone command named `pgns`. To install the `pgns` command, run the following:
+
+```console
+bbin install io.github.athos/pogonos
+```
+
+#### Usage
+
+The `pgns` command can be used exactly like the CLI tool:
+
+```console
+$ echo 'Hello, {{name}}!' | pgns render :data '{:name "Clojurian"}'
+Hello, Clojurian!
+$
+```
+
+Backed by [babashka.cli](https://github.com/babashka/cli), the `pgns` command also provides more UNIXy options:
+
+```console
+$ echo 'Hello, {{name}}!' | pgns render --data '{:name "Clojurian"}'
+Hello, Clojurian!
+$
+```
+
+Run `pgns help` for more detailed usage.
 
 ## License
 
