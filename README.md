@@ -3,7 +3,7 @@
 ![build](https://github.com/athos/pogonos/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/athos/pogonos/branch/master/graph/badge.svg)](https://codecov.io/gh/athos/pogonos)
 
-Pogonos is another Clojure(Script) implementation of the [Mustache](http://mustache.github.io/) templating language.
+Pogonos is yet another Clojure(Script) implementation of the [Mustache](http://mustache.github.io/) templating language.
 
 ## Features
 
