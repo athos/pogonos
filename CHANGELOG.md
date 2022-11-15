@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - ([#20](https://github.com/athos/pogonos/pull/20)) Babashka support
 - ([#24](https://github.com/athos/pogonos/pull/24)) Support for dynamic partials
+- ([#26](https://github.com/athos/pogonos/pull/26)) Add pgns command
 
 ### Fixed
 - ([#17](https://github.com/athos/pogonos/pull/17)) Allow non-map values as top-level data for spec testing
