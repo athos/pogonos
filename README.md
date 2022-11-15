@@ -13,17 +13,11 @@ Pogonos is another Clojure(Script) implementation of the [Mustache](http://musta
 - Handy API for use from the CLI
 - Supports Clojure, ClojureScript, self-hosted ClojureScript and Babashka
 
-## Project status
-
-Pogonos is still in beta. The public API provided in the `pogonos.core`
-namespace is almost fixed while other interfaces, including various
-extension points (such as readers, outputs, AST nodes), are subject to change.
-
 ## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Fundamentals](#fundamentals)
+  - [Basics](#basics)
   - [Outputs](#outputs)
   - [Partials](#partials)
   - [Error messages](#error-messages)
@@ -32,7 +26,7 @@ extension points (such as readers, outputs, AST nodes), are subject to change.
 
 ## Installation
 
-Add the following to your project's `:dependencies`:
+Add the following to your project's dependencies:
 
 [![Clojars Project](https://clojars.org/pogonos/latest-version.svg)](https://clojars.org/pogonos)
 
@@ -40,7 +34,7 @@ Add the following to your project's `:dependencies`:
 
 In this section, you'll see how to use Pogonos, but if you're not so familiar with the Mustache language itself, you might want to read its [documentation](http://mustache.github.io/) first.
 
-### Fundamentals
+### Basics
 
 #### `render-string`
 
@@ -73,7 +67,7 @@ or a resource file placed somewhere on the classpath.
 Let's say you have a template file located at `resources/sample.mustache`
 whose content looks like the following:
 
-```sh
+```console
 $ cat resources/sample.mustache
 Hello, {{name}}!
 ```
@@ -191,7 +185,7 @@ The Mustache spec provides a feature named [partials](http://mustache.github.io/
 
 Let's say you have a partial `resources/user.mustache` that looks like:
 
-```sh
+```console
 $ cat resources/user.mustache
 <strong>{{name}}</strong>
 ```
@@ -294,13 +288,13 @@ To use it as a `-X` program, add settings like the following to your `deps.edn`:
 
 To use it as a `-T` tool, install Pogonos with the following command:
 
-```sh
+```console
 clojure -Ttools install io.github.athos/pogonos '{:git/tag <version>}' :as template
 ```
 
 Then, you can call the API from the CLI like:
 
-```sh
+```console
 # as -X program
 $ clojure -X:template <function name> ...
 
@@ -321,7 +315,7 @@ The `render` function renders the specified Mustache template.
 
 The example below renders a template file named `hello.mustache` with the data `{:name "Clojurian"}`:
 
-```sh
+```console
 $ cat hello.mustache
 Hello, {{name}}!
 $ clojure -X:template render :file '"hello.mustache"' :data '{:name "Clojurian"}'
@@ -333,7 +327,7 @@ The `:file` option specifies the path to the template file to be rendered. The `
 
 If no template is specified, Pogonos will try to read the template from stdin:
 
-```sh
+```console
 $ echo 'Hello, {{name}}!' | clojure -X:template render :data '{:name "Clojurian"}'
 Hello, Clojurian!
 $
@@ -356,7 +350,7 @@ The `check` function performs a syntax check on a given Mustache template, repor
 
 The example below checks a template file named `broken.mustache` that contains a syntax error:
 
-```sh
+```console
 $ cat broken.mustache
 This is a broken {{template
 $ clojure -X:template check :file '"broken.mustache"'
@@ -370,7 +364,7 @@ $
 
 If no template is specified, Pogonos will try to read the template to be checked from stdin:
 
-```sh
+```console
 $ echo '{{#foo}}' | clojure -X:template check
 [ERROR] Missing section-end tag {{/foo}} (1:9):
 
@@ -396,7 +390,7 @@ Note that the `:file`, `:dir` and `:resource` options allow multiple items to be
 
 For example, the following command will check three template files named `foo.mustache`, `bar.mustache` and `baz.mustache` (Here, we assume that the file path separator is `:`):
 
-```sh
+```console
 $ clojure -X:template check :file '"foo.mustache:bar.mustache:baz.mustache"'
 ```
 
