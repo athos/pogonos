@@ -12,11 +12,11 @@
             :extra-deps {org.clojure/data.json {:mvn/version "2.4.0"}}
             :main-opts ["-m" "pogonos.test-runner"]}
            :coverage
-           {:extra-deps {cloverage/cloverage {:mvn/version "1.2.3"}}
+           {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
             :main-opts ["-m" "cloverage.coverage"
                         "-p" "src" "-s" "test" "--codecov"]}
            :shadow-cljs
-           {:extra-deps {thheller/shadow-cljs {:mvn/version "2.18.0"}}
+           {:extra-deps {thheller/shadow-cljs {:mvn/version "2.20.11"}}
             :main-opts ["-m" "shadow.cljs.devtools.cli"]}
            :cljs
            {:extra-deps
@@ -27,7 +27,7 @@
            :build
            {:deps
             {io.github.clojure/tools.build
-             {:git/tag "v0.8.3" :git/sha "0d20256"}
+             {:git/tag "v0.8.5" :git/sha "0d20256"}
              io.github.seancorfield/build-clj
              {:git/tag "v0.8.3" :git/sha "7ac1f8d"}}
             :ns-default build}}}
