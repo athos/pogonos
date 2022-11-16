@@ -15,7 +15,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     - name: Setup Clojure CLI & Babashka & clj-kondo
-      uses: DeLaGuardo/setup-clojure@9.5
+      uses: DeLaGuardo/setup-clojure@10.0
       with:
         cli: latest
         bb: latest
