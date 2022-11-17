@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.2.1] - 2022-11-17
 ### Added
 - ([#20](https://github.com/athos/pogonos/pull/20)) Babashka support
 - ([#24](https://github.com/athos/pogonos/pull/24)) Support for dynamic partials
@@ -33,7 +34,8 @@ All notable changes to this project will be documented in this file. This change
 ## [0.1.0] - 2020-06-18
 - First release
 
-[Unreleased]: https://github.com/athos/pogonos/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/athos/pogonos/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/athos/pogonos/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/athos/pogonos/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/athos/pogonos/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/athos/pogonos/releases/0.1.0

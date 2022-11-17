@@ -3,7 +3,7 @@
             [org.corfield.build :as bb]))
 
 (def lib 'pogonos/pogonos)
-(def version "0.2.1-SNAPSHOT")
+(def version "0.2.1")
 (def tag (b/git-process {:git-args "rev-parse HEAD"}))
 
 (defn clean [opts]
