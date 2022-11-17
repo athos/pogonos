@@ -2,6 +2,7 @@
 [![Clojars Project](https://img.shields.io/clojars/v/pogonos.svg)](https://clojars.org/pogonos)
 ![build](https://github.com/athos/pogonos/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/athos/pogonos/branch/master/graph/badge.svg)](https://codecov.io/gh/athos/pogonos)
+[![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://babashka.org)
 
 Pogonos is yet another Clojure(Script) implementation of the [Mustache](http://mustache.github.io/) templating language.
 
