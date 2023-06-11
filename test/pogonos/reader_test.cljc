@@ -41,18 +41,18 @@
 
 #?(:clj
    (deftest file-reader-test
-     (with-open [r (make-file-reader "")]
+     (reader/with-open [r (make-file-reader "")]
        (is (nil? (proto/read-line r))))
-     (with-open [r (make-file-reader "foo")]
+     (reader/with-open [r (make-file-reader "foo")]
        (is (= "foo" (proto/read-line r)))
        (is (nil? (proto/read-line r))))
-     (with-open [r (make-file-reader "\n")]
+     (reader/with-open [r (make-file-reader "\n")]
        (is (= "\n" (proto/read-line r)))
        (is (nil? (proto/read-line r))))
-     (with-open [r (make-file-reader "foo\n")]
+     (reader/with-open [r (make-file-reader "foo\n")]
        (is (= "foo\n" (proto/read-line r)))
        (is (nil? (proto/read-line r))))
-     (with-open [r (make-file-reader "foo\nbar\nbaz")]
+     (reader/with-open [r (make-file-reader "foo\nbar\nbaz")]
        (is (= "foo\n" (proto/read-line r)))
        (is (not (proto/end? r)))
        (is (= "bar\n" (proto/read-line r)))
@@ -61,7 +61,7 @@
        (is (proto/end? r))
        (is (nil? (proto/read-line r)))
        (is (proto/end? r)))
-     (with-open [r (make-file-reader "foo\nbar\nbaz\n")]
+     (reader/with-open [r (make-file-reader "foo\nbar\nbaz\n")]
        (is (= "foo\n" (proto/read-line r)))
        (is (= "bar\n" (proto/read-line r)))
        (is (= "baz\n" (proto/read-line r)))
