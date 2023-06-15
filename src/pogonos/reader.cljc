@@ -1,5 +1,5 @@
 (ns pogonos.reader
-  (:refer-clojure :exclude [read-line])
+  (:refer-clojure :exclude [with-open read-line])
   (:require [clojure.string :as str]
             #?(:clj [clojure.java.io :as io])
             [pogonos.protocols :as proto]
@@ -203,3 +203,11 @@
     (when (< (col-num reader) (count line))
       (every? #{\space \tab \return \newline}
               (subs line (col-num reader))))))
+
+#?(:clj
+   (defmacro with-open [[name init] & body]
+     `(let [~name ~init]
+        (try
+          ~@body
+          (finally
+            (close ~name))))))

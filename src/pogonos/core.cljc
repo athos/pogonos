@@ -66,7 +66,7 @@
       (let [f (io/as-file file)]
         (if (.exists f)
           (let [opts (fixup-options opts partials/file-partials)]
-            (with-open [in (reader/make-file-reader f)]
+            (reader/with-open [in (reader/make-file-reader f)]
               (parse-input in opts)))
           (throw (FileNotFoundException. (.getName f))))))))
 
@@ -81,7 +81,7 @@
      ([res opts]
       (if-let [res (io/resource res)]
         (let [opts (fixup-options opts partials/resource-partials)]
-          (with-open [in (reader/make-file-reader res)]
+          (reader/with-open [in (reader/make-file-reader res)]
             (parse-input in opts)))
         (throw (FileNotFoundException. res))))))
 
@@ -141,7 +141,7 @@
           (let [opts (-> opts
                          (fixup-options partials/file-partials)
                          (assoc :source (.getName f)))]
-            (with-open [in (reader/make-file-reader f)]
+            (reader/with-open [in (reader/make-file-reader f)]
               (render-input in data opts)))
           (throw (FileNotFoundException. (.getName f))))))))
 
@@ -157,7 +157,7 @@
       (if-let [res (io/resource res)]
         (let [opts (cond-> (fixup-options opts partials/resource-partials)
                      (string? res) (assoc :source res))]
-          (with-open [in (reader/make-file-reader res)]
+          (reader/with-open [in (reader/make-file-reader res)]
             (render-input in data opts)))
         (throw (FileNotFoundException. res))))))
 
@@ -191,7 +191,7 @@ the available options."
      ([file opts]
       (let [f (io/as-file file)]
         (if (.exists f)
-          (with-open [in (reader/make-file-reader f)]
+          (reader/with-open [in (reader/make-file-reader f)]
             (check-input in (assoc opts :source (.getName f))))
           (throw (FileNotFoundException. (.getName f))))))))
 
@@ -206,7 +206,7 @@ the available options."
      ([res opts]
       (if-let [res (io/resource res)]
         (let [opts (cond-> opts (string? res) (assoc :source res))]
-          (with-open [in (reader/make-file-reader res)]
+          (reader/with-open [in (reader/make-file-reader res)]
             (check-input in opts)))
         (throw (FileNotFoundException. res))))))
 

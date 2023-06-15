@@ -99,7 +99,7 @@
       (when (and (not (:quiet opts)) (not (:only-show-errors opts)))
         (binding [*out* *err*]
           (println "Checking template" name)))
-      (with-open [r (reader/->reader input)]
+      (reader/with-open [r (reader/->reader input)]
         (with-error-handling opts
           #(pg/check-input r (assoc opts :source name)))))))
 
