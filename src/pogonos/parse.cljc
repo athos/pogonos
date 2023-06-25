@@ -14,10 +14,20 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
-(defrecord Parser [in out])
+(defrecord Parser [in out parse-keys-fn])
 
-(defn make-parser [in out]
-  (->Parser (reader/make-line-buffering-reader in) out))
+(declare parse-ordinary-keys parse-namespaced-keys)
+
+(defn make-parser
+  ([in out]
+   (make-parser in out {}))
+  ([in out {:keys [allow-namespaced-keys]}]
+   (let [parse-keys-fn (if allow-namespaced-keys
+                         parse-namespaced-keys
+                         parse-ordinary-keys)]
+     (->Parser (reader/make-line-buffering-reader in)
+               out
+               parse-keys-fn))))
 
 (defn- read-char [{:keys [in]}]
   (reader/read-char in))
@@ -66,19 +76,36 @@
                   (out indent)))
               out))))
 
+(defn- parse-ordinary-keys [s]
+  (let [keys (str/split s #"\.")]
+    (when-not (some (fn [k] (or (str/blank? k) (pstr/index-of k " " 0))) keys)
+      (apply list (map keyword keys)))))
+
+(defn- parse-namespaced-keys [s]
+  (loop [start 0, ret (transient [])]
+    (if-let [i (pstr/index-of s "/" start)]
+      (let [ns (subs s start i)
+            end (pstr/index-of s "." (inc i))
+            name (if end
+                   (subs s (inc i) end)
+                   (subs s (inc i)))]
+        (when-not (or (str/blank? ns) (pstr/index-of ns " " 0)
+                      (str/blank? name) (pstr/index-of name " " 0))
+          (recur (or (some-> end inc) (count s))
+                 (conj! ret (keyword ns name)))))
+      (into (persistent! ret) (parse-ordinary-keys (subs s start))))))
+
 (defn- parse-keys
   ([parser s]
    (parse-keys parser s *close-delim*))
-  ([parser s close-delim]
-   (let [name (pstr/trim s)
-         keys (str/split name #"\.")]
-     (if (some (fn [k] (or (str/blank? k) (pstr/index-of k " " 0))) keys)
-       (error :invalid-variable-name
-              (str "Invalid variable \"" name "\"")
+  ([{:keys [parse-keys-fn] :as parser} s close-delim]
+   (let [raw-name (pstr/trim s)]
+     (or (parse-keys-fn raw-name)
+         (error :invalid-variable-name
+              (str "Invalid variable \"" raw-name "\"")
               (current-line parser) (line-num parser)
               (- (col-num parser) (count (str/triml s)) (count close-delim))
-              {:variable-name name})
-       (apply list (map keyword keys))))))
+              {:variable-name raw-name})))))
 
 (defn- stringify-keys [keys]
   (let [out (output/string-output)]
@@ -349,12 +376,13 @@
   ([in out] (parse in out {}))
   ([in out
     {:keys [source suppress-verbose-errors open-delim close-delim indent]
-     :or {suppress-verbose-errors false}}]
+     :or {suppress-verbose-errors false}
+     :as opts}]
    (binding [*open-delim* (or open-delim default-open-delim)
              *close-delim* (or close-delim default-close-delim)
              error/*source* source
              error/*suppress-verbose-errors* suppress-verbose-errors]
-     (let [parser (-> (make-parser in out)
+     (let [parser (-> (make-parser in out opts)
                       (assoc :indent indent)
                       (enable-indent-insertion))]
        (parse* parser)))))
