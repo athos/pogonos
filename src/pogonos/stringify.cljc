@@ -10,13 +10,19 @@
 (def ^:dynamic *open-delim*)
 (def ^:dynamic *close-delim*)
 
+(defn- stringify-key [key out]
+  (when-let [ns (namespace key)]
+    (out ns)
+    (out "/"))
+  (out (name key)))
+
 (defn stringify-keys [keys out]
   (if (empty? keys)
     (out ".")
-    (do (out (name (first keys)))
+    (do (stringify-key (first keys) out)
         (doseq [k (rest keys)]
           (out ".")
-          (out (name k))))))
+          (stringify-key k out)))))
 
 (defn stringify* [x out]
   (if (string? x)
