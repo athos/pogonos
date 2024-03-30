@@ -1,6 +1,6 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        org.babashka/cli {:mvn/version "0.5.40"}}
+ :deps {org.clojure/clojure {:mvn/version "1.11.2"}
+        org.babashka/cli {:mvn/version "0.8.58"}}
  :tools/usage {:ns-default pogonos.api}
  :aliases {:check
            {:extra-deps
@@ -20,7 +20,7 @@
             :main-opts ["-m" "shadow.cljs.devtools.cli"]}
            :cljs
            {:extra-deps
-            {org.clojure/clojurescript {:mvn/version "1.11.4"}}}
+            {org.clojure/clojurescript {:mvn/version "1.11.132"}}}
            :test-cljs
            {:main-opts ["-m" "cljs.main" "-re" "node"
                         "-m" "pogonos.test-runner"]}
