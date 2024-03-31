@@ -9,6 +9,10 @@
 (defprotocol ToReader
   (->reader [this]))
 
+(defprotocol IContext
+  (lookup [this keys])
+  (push [this val]))
+
 (defprotocol IRenderable
   (render [this ctx out]))
 

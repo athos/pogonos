@@ -1,5 +1,6 @@
 (ns pogonos.core
   (:require #?(:clj [clojure.java.io :as io])
+            [pogonos.context :as context]
             [pogonos.error :as error]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]
@@ -103,14 +104,14 @@
                                        (merge opts)
                                        fixup-options)
          out (output)]
-     (render/render (list data) out template opts)
+     (render/render (context/make-context data opts) out template opts)
      (out))))
 
 (defn render-input
   ([in data]
    (render-input in data {}))
   ([in data opts]
-   (let [ctx (list data)
+   (let [ctx (context/make-context data opts)
          {:keys [output]
           :as opts} (fixup-options opts #?(:clj partials/resource-partials))
          out (output)]

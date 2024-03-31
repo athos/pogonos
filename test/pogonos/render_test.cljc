@@ -1,12 +1,14 @@
 (ns pogonos.render-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest are testing]]
+            [pogonos.context :as context]
             [pogonos.render :as render]
             [pogonos.nodes :as nodes]
             [pogonos.output :as output]))
 
 (deftest lookup-test
-  (are [ctx keys expected] (= expected (render/lookup ctx keys))
+  (are [ctx keys expected]
+       (= expected (render/lookup (context/->NonCheckingContext ctx) keys))
     '({:x 42})
     '(:x)
     42
@@ -36,7 +38,8 @@
    (render template data nil))
   ([template data partials]
    (let [out ((output/to-string))]
-     (render/render (list data) out
+     (render/render (context/make-context data)
+                    out
                     (nodes/->Root template)
                     {:partials partials})
      (out))))

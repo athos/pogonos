@@ -35,18 +35,7 @@
      :cljs (gstr/htmlEscape s)))
 
 (defn lookup [ctx keys]
-  (if-let [k (peek keys)]
-    (when-let [v (loop [ctx ctx]
-                   (when-let [v (peek ctx)]
-                     (if (and (map? v)
-                              (not #?(:clj (identical? (v k ::none) ::none)
-                                      :cljs (keyword-identical? (v k ::none) ::none))))
-                       v
-                       (recur (next ctx)))))]
-      (if (next keys)
-        (get-in v keys)
-        (v k)))
-    (peek ctx)))
+  (proto/lookup ctx keys))
 
 (defn render* [ctx out x]
   (if (string? x)
@@ -93,12 +82,12 @@
 
             (map? val)
             (doseq [node (:nodes this)]
-              (render* (conj ctx val) out node))
+              (render* (proto/push ctx val) out node))
 
             (and (coll? val) (sequential? val))
             (when (seq val)
               (doseq [e val, node (:nodes this)]
-                (render* (conj ctx e) out node)))
+                (render* (proto/push ctx e) out node)))
 
             (fn? val)
             (let [{:keys [open close]} (meta this)
@@ -113,7 +102,7 @@
 
             :else
             (doseq [node (:nodes this)]
-              (render* (conj ctx val) out node)))))
+              (render* (proto/push ctx val) out node)))))
 
   #?(:clj Inverted :cljs nodes/Inverted)
   (render [this ctx out]
